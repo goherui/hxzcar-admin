@@ -1,6 +1,7 @@
-import { BellOutlined, InfoCircleOutlined, UserOutlined, SearchOutlined, SettingOutlined } from '@ant-design/icons'
-import { Badge, Button, Select, Input } from 'antd'
+import { BellOutlined, InfoCircleOutlined, UserOutlined, SearchOutlined, SettingOutlined, LogoutOutlined } from '@ant-design/icons'
+import { Badge, Button, Select, Input, Dropdown, Menu } from 'antd'
 import { useLocation } from 'react-router-dom'
+import { removeToken, removeUserInfo } from '../utils/auth'
 
 const pageTitles = {
   'order-list': '订单列表',
@@ -29,6 +30,23 @@ function Header() {
   const isHome = location.pathname === '/' || location.pathname === '/dashboard'
   const pathName = location.pathname.split('/').pop()
   const pageTitle = pageTitles[pathName] || '首页'
+
+  const handleLogout = () => {
+    removeToken()
+    removeUserInfo()
+    window.location.href = '/login'
+  }
+
+  const userMenu = (
+    <Menu>
+      <Menu.Item key="1">个人中心</Menu.Item>
+      <Menu.Item key="2">修改密码</Menu.Item>
+      <Menu.Divider />
+      <Menu.Item key="3" icon={<LogoutOutlined />} onClick={handleLogout}>
+        退出登录
+      </Menu.Item>
+    </Menu>
+  )
 
   return (
     <header
@@ -133,31 +151,33 @@ function Header() {
               style={{ padding: '8px' }}
             />
           </Badge>
-          <div 
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 8,
-              padding: '6px 12px',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-            }}
-          >
+          <Dropdown overlay={userMenu} trigger={['click']}>
             <div 
               style={{ 
-                width: 32, 
-                height: 32, 
-                borderRadius: '50%', 
-                background: 'linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 8,
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-md)',
+                cursor: 'pointer',
               }}
             >
-              <UserOutlined style={{ color: 'white', fontSize: 16 }} />
+              <div 
+                style={{ 
+                  width: 32, 
+                  height: 32, 
+                  borderRadius: '50%', 
+                  background: 'linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <UserOutlined style={{ color: 'white', fontSize: 16 }} />
+              </div>
+              <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>运营小猪</span>
             </div>
-            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>运营小猪</span>
-          </div>
+          </Dropdown>
         </div>
       </div>
     </header>

@@ -1,6 +1,9 @@
 package system
 
 import (
+	"encoding/base64"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
@@ -11,24 +14,13 @@ import (
 	"go.uber.org/zap"
 )
 
-// 当开启多服务器部署时，替换下面的配置，使用redis共享存储验证码
-// var store = captcha.NewDefaultRedisStore()
 var store = base64Captcha.DefaultMemStore
 
 type BaseApi struct{}
 
-// Captcha
-// @Tags      Base
-// @Summary   生成验证码
-// @Security  ApiKeyAuth
-// @accept    application/json
-// @Produce   application/json
-// @Success   200  {object}  response.Response{data=systemRes.SysCaptchaResponse,msg=string}  "生成验证码,返回包括随机数id,base64,验证码长度,是否开启验证码"
-// @Router    /base/captcha [post]
 func (b *BaseApi) Captcha(c *gin.Context) {
-	// 判断验证码是否开启
-	openCaptcha := global.GVA_CONFIG.Captcha.OpenCaptcha               // 是否开启防爆次数
-	openCaptchaTimeOut := global.GVA_CONFIG.Captcha.OpenCaptchaTimeOut // 缓存超时时间
+	openCaptcha := global.GVA_CONFIG.Captcha.OpenCaptcha
+	openCaptchaTimeOut := global.GVA_CONFIG.Captcha.OpenCaptchaTimeOut
 	key := c.ClientIP()
 	v, ok := global.BlackCache.Get(key)
 	if !ok {
@@ -39,10 +31,8 @@ func (b *BaseApi) Captcha(c *gin.Context) {
 	if openCaptcha == 0 || openCaptcha < interfaceToInt(v) {
 		oc = true
 	}
-	// 字符,公式,验证码配置
-	// 生成默认数字的driver
+
 	driver := base64Captcha.NewDriverDigit(global.GVA_CONFIG.Captcha.ImgHeight, global.GVA_CONFIG.Captcha.ImgWidth, global.GVA_CONFIG.Captcha.KeyLong, 0.7, 80)
-	// cp := base64Captcha.NewCaptcha(driver, store.UseWithCtx(c))   // v8下使用redis
 	cp := base64Captcha.NewCaptcha(driver, store)
 	id, b64s, _, err := cp.Generate()
 	if err != nil {
@@ -58,7 +48,41 @@ func (b *BaseApi) Captcha(c *gin.Context) {
 	}, "验证码获取成功", c)
 }
 
-// 类型转换
+func (b *BaseApi) CaptchaImage(c *gin.Context) {
+	captchaId := c.Query("captchaId")
+	if captchaId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "缺少captchaId"})
+		return
+	}
+
+	driver := base64Captcha.NewDriverDigit(global.GVA_CONFIG.Captcha.ImgHeight, global.GVA_CONFIG.Captcha.ImgWidth, global.GVA_CONFIG.Captcha.KeyLong, 0.7, 80)
+	cp := base64Captcha.NewCaptcha(driver, store)
+	id, b64s, code, err := cp.Generate()
+	if err != nil {
+		global.GVA_LOG.Error("验证码生成失败!", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "验证码生成失败"})
+		return
+	}
+
+	store.Set(id, code)
+
+	cleanB64 := strings.ReplaceAll(b64s, "data:image/png;base64,", "")
+	cleanB64 = strings.ReplaceAll(cleanB64, "data:image/jpeg;base64,", "")
+
+	imgData, err := base64.StdEncoding.DecodeString(cleanB64)
+	if err != nil {
+		global.GVA_LOG.Error("base64解码失败!", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "图片解码失败"})
+		return
+	}
+
+	c.Header("Content-Type", "image/png")
+	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+	c.Header("Pragma", "no-cache")
+	c.Header("Expires", "0")
+	c.Data(http.StatusOK, "image/png", imgData)
+}
+
 func interfaceToInt(v interface{}) (i int) {
 	switch v := v.(type) {
 	case int:

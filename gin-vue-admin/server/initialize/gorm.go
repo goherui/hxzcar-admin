@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
-	"github.com/flipped-aurora/gin-vue-admin/server/model/example"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
 
 	"go.uber.org/zap"
@@ -42,7 +41,6 @@ func RegisterTables() {
 
 	db := global.GVA_DB
 	err := db.AutoMigrate(
-
 		system.SysApi{},
 		system.SysIgnoreApi{},
 		system.SysUser{},
@@ -51,26 +49,15 @@ func RegisterTables() {
 		system.SysAuthority{},
 		system.SysDictionary{},
 		system.SysOperationRecord{},
-		system.SysAutoCodeHistory{},
 		system.SysDictionaryDetail{},
 		system.SysBaseMenuParameter{},
 		system.SysBaseMenuBtn{},
 		system.SysAuthorityBtn{},
-		system.SysAutoCodePackage{},
-		system.SysExportTemplate{},
-		system.Condition{},
-		system.JoinTemplate{},
 		system.SysParams{},
 		system.SysVersion{},
 		system.SysError{},
 		system.SysApiToken{},
 		system.SysLoginLog{},
-
-		example.ExaFile{},
-		example.ExaCustomer{},
-		example.ExaFileChunk{},
-		example.ExaFileUploadAndDownload{},
-		example.ExaAttachmentCategory{},
 	)
 	if err != nil {
 		global.GVA_LOG.Error("register table failed", zap.Error(err))

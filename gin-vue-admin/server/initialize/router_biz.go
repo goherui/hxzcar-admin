@@ -1,6 +1,7 @@
 package initialize
 
 import (
+	internalRouter "github.com/flipped-aurora/gin-vue-admin/server/internal/router"
 	"github.com/flipped-aurora/gin-vue-admin/server/router"
 	"github.com/gin-gonic/gin"
 )
@@ -16,4 +17,6 @@ func initBizRouter(routers ...*gin.RouterGroup) {
 	publicGroup := routers[1]
 
 	holder(publicGroup, privateGroup)
+
+	internalRouter.InitHxzCarRouter(privateGroup)
 }

@@ -2,9 +2,7 @@ package system
 
 import (
 	"context"
-	"fmt"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
-	"github.com/flipped-aurora/gin-vue-admin/server/model/common"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	systemReq "github.com/flipped-aurora/gin-vue-admin/server/model/system/request"
 )
@@ -97,29 +95,7 @@ func (sysErrorService *SysErrorService) GetSysErrorSolution(ctx context.Context,
 		_ = global.GVA_DB.Model(&system.SysError{}).Where("id = ?", id).First(&se).Error
 
 		// 构造 LLM 请求参数，使用管家模式(butler)根据错误信息生成解决方案
-		var form, info string
-		if se.Form != nil {
-			form = *se.Form
-		}
-		if se.Info != nil {
-			info = *se.Info
-		}
-
-		llmReq := common.JSONMap{
-			"mode": "solution",
-			"info": info,
-			"form": form,
-		}
-
-		// 调用服务层 LLMAuto，忽略错误但尽量写入方案
-		var solution string
-		if data, err := (&AutoCodeService{}).LLMAuto(context.Background(), llmReq); err == nil {
-			solution = fmt.Sprintf("%v", data.(map[string]interface{})["text"])
-			_ = global.GVA_DB.Model(&system.SysError{}).Where("id = ?", id).Updates(map[string]interface{}{"status": "处理完成", "solution": solution}).Error
-		} else {
-			// 即使生成失败也标记为完成，避免任务卡住
-			_ = global.GVA_DB.Model(&system.SysError{}).Where("id = ?", id).Update("status", "处理失败").Error
-		}
+		_ = global.GVA_DB.Model(&system.SysError{}).Where("id = ?", id).Update("status", "已查看").Error
 	}(ID)
 
 	return nil

@@ -20,9 +20,7 @@ zap:
 
 # redis configuration
 redis:
-    #是否使用redis集群模式
     useCluster: false
-    #使用集群模式addr和db默认无效
     addr: 127.0.0.1:6379
     password: ""
     db: 0
@@ -31,11 +29,10 @@ redis:
         - "172.21.0.4:7001"
         - "172.21.0.2:7002"
 
-# redis-list configuration
 redis-list:
-    - name: cache           # 数据库的名称,注意: name 需要在 redis-list 中唯一
-      useCluster: false     # 是否使用redis集群模式
-      addr: 127.0.0.1:6379  # 使用集群模式addr和db默认无效
+    - name: cache
+      useCluster: false
+      addr: 127.0.0.1:6379
       password: ""
       db: 0
       clusterAddrs:
@@ -43,7 +40,6 @@ redis-list:
           - "172.21.0.4:7001"
           - "172.21.0.2:7002"
 
-# mongo configuration
 mongo:
     coll: ''
     options: ''
@@ -60,7 +56,6 @@ mongo:
         - host: ''
           port: ''
 
-# email configuration
 email:
     to: xxx@qq.com
     port: 465
@@ -70,50 +65,39 @@ email:
     secret: xxx
     nickname: test
 
-# system configuration
 system:
-    env: local # 修改为public可以关闭路由日志输出
+    env: local
     addr: 8888
     db-type: mysql
-    oss-type: local # 控制oss选择走本地还是 七牛等其他仓 自行增加其他oss仓可以在 server/utils/upload/upload.go 中 NewOss函数配置
-    use-redis: false # 使用redis
-    use-mongo: false     # 使用mongo
+    oss-type: local
+    use-redis: false
+    use-mongo: false
     use-multipoint: false
-    # IP限制次数 一个小时15000次
     iplimit-count: 15000
-    #  IP限制一个小时
     iplimit-time: 3600
-    #  路由全局前缀
     router-prefix: ""
-    #  严格角色模式 打开后权限将会存在上下级关系
     use-strict-auth: false
-    #  禁用自动迁移数据库表结构，生产环境建议设为true，手动迁移
     disable-auto-migrate: false
 
-# captcha configuration
 captcha:
     key-long: 6
     img-width: 240
     img-height: 80
-    open-captcha: 0 # 0代表一直开启，大于0代表限制次数
-    open-captcha-timeout: 3600 # open-captcha大于0时才生效
+    open-captcha: 9999
+    open-captcha-timeout: 3600
 
-# mysql connect configuration
-# 未初始化之前请勿手动修改数据库信息！！！如果一定要手动初始化请看（https://gin-vue-admin.com/docs/first_master）
 mysql:
-    path: ""
-    port: ""
-    config: ""
-    db-name: ""
-    username: ""
-    password: ""
+    path: localhost
+    port: "3306"
+    config: charset=utf8mb4&parseTime=True&loc=Local
+    db-name: hxzcar-admin
+    username: root
+    password: mysql_2SASaZ
     max-idle-conns: 10
     max-open-conns: 100
     log-mode: ""
     log-zap: false
 
-# pgsql connect configuration
-# 未初始化之前请勿手动修改数据库信息！！！如果一定要手动初始化请看（https://gin-vue-admin.com/docs/first_master）
 pgsql:
     path: ""
     port: ""
@@ -159,9 +143,9 @@ sqlite:
     log-mode: ""
     log-zap: false
 db-list:
-    - disable: true # 是否禁用
-      type: "" # 数据库的类型,目前支持mysql、pgsql、mssql、oracle
-      alias-name: "" # 数据库的名称,注意: alias-name 需要在db-list中唯一
+    - disable: true
+      type: ""
+      alias-name: ""
       path: ""
       port: ""
       config: ""
@@ -173,20 +157,17 @@ db-list:
       log-mode: ""
       log-zap: false
 
-# local configuration
 local:
     path: uploads/file
     store-path: uploads/file
 
-# autocode configuration
 autocode:
     web: web/src
-    root: "" # root 自动适配项目根目录, 请不要手动配置,他会在项目加载的时候识别出根路径
+    root: ""
     server: server
     module: 'github.com/flipped-aurora/gin-vue-admin/server'
-    ai-path: ""  # AI服务路径
+    ai-path: ""
 
-# qiniu configuration (请自行七牛申请对应的 公钥 私钥 bucket 和 域名地址)
 qiniu:
     zone: ZoneHuaDong
     bucket: ""
@@ -196,7 +177,6 @@ qiniu:
     secret-key: ""
     use-cdn-domains: false
 
-# minio oss configuration
 minio:
     endpoint: yourEndpoint
     access-key-id: yourAccessKeyId
@@ -206,7 +186,6 @@ minio:
     base-path: ""
     bucket-url: "http://host:9000/yourBucketName"
 
-# aliyun oss configuration
 aliyun-oss:
     endpoint: yourEndpoint
     access-key-id: yourAccessKeyId
@@ -215,7 +194,6 @@ aliyun-oss:
     bucket-url: yourBucketUrl
     base-path: yourBasePath
 
-# tencent cos configuration
 tencent-cos:
     bucket: xxxxx-10005608
     region: ap-shanghai
@@ -224,7 +202,6 @@ tencent-cos:
     base-url: https://gin.vue.admin
     path-prefix: github.com/flipped-aurora/gin-vue-admin/server
 
-# aws s3 configuration (minio compatible)
 aws-s3:
     bucket: xxxxx-10005608
     region: ap-shanghai
@@ -236,7 +213,6 @@ aws-s3:
     base-url: https://gin.vue.admin
     path-prefix: github.com/flipped-aurora/gin-vue-admin/server
 
-# cloudflare r2 configuration
 cloudflare-r2:
     bucket: xxxx0bucket
     base-url: https://gin.vue.admin.com
@@ -245,7 +221,6 @@ cloudflare-r2:
     access-key-id: xxx_key_id
     secret-access-key: xxx_secret_key
 
-# huawei obs configuration
 hua-wei-obs:
     path: you-path
     bucket: you-bucket
@@ -253,29 +228,25 @@ hua-wei-obs:
     access-key: you-access-key
     secret-key: you-secret-key
 
-# excel configuration
 excel:
     dir: ./resource/excel/
 
-# disk usage configuration
 disk-list:
     - mount-point: "/"
 
-# 跨域配置
-# 需要配合 server/initialize/router.go -> `Router.Use(middleware.CorsByRules())` 使用
 cors:
-    mode: strict-whitelist # 放行模式: allow-all, 放行全部; whitelist, 白名单模式, 来自白名单内域名的请求添加 cors 头; strict-whitelist 严格白名单模式, 白名单外的请求一律拒绝
+    mode: strict-whitelist
     whitelist:
         - allow-origin: example1.com
           allow-headers: Content-Type,AccessToken,X-CSRF-Token, Authorization, Token,X-Token,X-User-Id
           allow-methods: POST, GET
           expose-headers: Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type
-          allow-credentials: true # 布尔值
+          allow-credentials: true
         - allow-origin: example2.com
           allow-headers: content-type
           allow-methods: GET, POST
           expose-headers: Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type
-          allow-credentials: true # 布尔值
+          allow-credentials: true
 mcp:
     name: GVA_MCP
     version: v1.0.0

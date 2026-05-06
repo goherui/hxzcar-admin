@@ -62,14 +62,11 @@ func (b *BaseApi) Login(c *gin.Context) {
 		return
 	}
 
-	u := &system.SysUser{Username: l.Username, Password: l.Password}
-	user, err := userService.Login(u)
-	if err != nil {
+	admin, err := adminService.Login(l.Username, l.Password)
+	if err != nil || admin == nil {
 		global.GVA_LOG.Error("登陆失败! 用户名不存在或者密码错误!", zap.Error(err))
-		// 验证码次数+1
 		global.BlackCache.Increment(key, 1)
 		response.FailWithMessage("用户名不存在或者密码错误", c)
-		// 记录登录失败日志
 		loginLogService.CreateLoginLog(system.SysLoginLog{
 			Username:     l.Username,
 			Ip:           c.ClientIP(),
@@ -79,23 +76,82 @@ func (b *BaseApi) Login(c *gin.Context) {
 		})
 		return
 	}
-	if user.Enable != 1 {
+	if admin.Status != 1 {
 		global.GVA_LOG.Error("登陆失败! 用户被禁止登录!")
-		// 验证码次数+1
 		global.BlackCache.Increment(key, 1)
 		response.FailWithMessage("用户被禁止登录", c)
-		// 记录登录失败日志
 		loginLogService.CreateLoginLog(system.SysLoginLog{
 			Username:     l.Username,
 			Ip:           c.ClientIP(),
 			Agent:        c.Request.UserAgent(),
 			Status:       false,
 			ErrorMessage: "用户被禁止登录",
-			UserID:       user.ID,
+			UserID:       admin.ID,
 		})
 		return
 	}
-	b.TokenNext(c, *user)
+	b.AdminTokenNext(c, *admin)
+}
+
+// AdminTokenNext 管理员登录以后签发jwt
+func (b *BaseApi) AdminTokenNext(c *gin.Context, admin system.Admin) {
+	token, claims, err := utils.LoginToken(&admin)
+	if err != nil {
+		global.GVA_LOG.Error("获取token失败!", zap.Error(err))
+		response.FailWithMessage("获取token失败", c)
+		return
+	}
+	loginLogService.CreateLoginLog(system.SysLoginLog{
+		Username:     admin.Username,
+		Ip:           c.ClientIP(),
+		Agent:        c.Request.UserAgent(),
+		Status:       true,
+		UserID:       admin.ID,
+		ErrorMessage: "登录成功",
+	})
+	if !global.GVA_CONFIG.System.UseMultipoint {
+		utils.SetToken(c, token, int(claims.RegisteredClaims.ExpiresAt.Unix()-time.Now().Unix()))
+		response.OkWithDetailed(systemRes.LoginResponse{
+			User:      admin,
+			Token:     token,
+			ExpiresAt: claims.RegisteredClaims.ExpiresAt.Unix() * 1000,
+		}, "登录成功", c)
+		return
+	}
+
+	if jwtStr, err := jwtService.GetRedisJWT(admin.Username); err == redis.Nil {
+		if err := utils.SetRedisJWT(token, admin.Username); err != nil {
+			global.GVA_LOG.Error("设置登录状态失败!", zap.Error(err))
+			response.FailWithMessage("设置登录状态失败", c)
+			return
+		}
+		utils.SetToken(c, token, int(claims.RegisteredClaims.ExpiresAt.Unix()-time.Now().Unix()))
+		response.OkWithDetailed(systemRes.LoginResponse{
+			User:      admin,
+			Token:     token,
+			ExpiresAt: claims.RegisteredClaims.ExpiresAt.Unix() * 1000,
+		}, "登录成功", c)
+	} else if err != nil {
+		global.GVA_LOG.Error("设置登录状态失败!", zap.Error(err))
+		response.FailWithMessage("设置登录状态失败", c)
+	} else {
+		var blackJWT system.JwtBlacklist
+		blackJWT.Jwt = jwtStr
+		if err := jwtService.JsonInBlacklist(blackJWT); err != nil {
+			response.FailWithMessage("jwt作废失败", c)
+			return
+		}
+		if err := utils.SetRedisJWT(token, admin.Username); err != nil {
+			response.FailWithMessage("设置登录状态失败", c)
+			return
+		}
+		utils.SetToken(c, token, int(claims.RegisteredClaims.ExpiresAt.Unix()-time.Now().Unix()))
+		response.OkWithDetailed(systemRes.LoginResponse{
+			User:      admin,
+			Token:     token,
+			ExpiresAt: claims.RegisteredClaims.ExpiresAt.Unix() * 1000,
+		}, "登录成功", c)
+	}
 }
 
 // TokenNext 登录以后签发jwt
@@ -108,11 +164,11 @@ func (b *BaseApi) TokenNext(c *gin.Context, user system.SysUser) {
 	}
 	// 记录登录成功日志
 	loginLogService.CreateLoginLog(system.SysLoginLog{
-		Username: user.Username,
-		Ip:       c.ClientIP(),
-		Agent:    c.Request.UserAgent(),
-		Status:   true,
-		UserID:   user.ID,
+		Username:     user.Username,
+		Ip:           c.ClientIP(),
+		Agent:        c.Request.UserAgent(),
+		Status:       true,
+		UserID:       user.ID,
 		ErrorMessage: "登录成功",
 	})
 	if !global.GVA_CONFIG.System.UseMultipoint {

@@ -68,7 +68,7 @@ email:
 system:
     env: local
     addr: 8888
-    db-type: mysql
+    db-type: sqlite
     oss-type: local
     use-redis: false
     use-mongo: false
@@ -77,7 +77,7 @@ system:
     iplimit-time: 3600
     router-prefix: ""
     use-strict-auth: false
-    disable-auto-migrate: true
+    disable-auto-migrate: false
 
 captcha:
     key-long: 6
@@ -132,10 +132,10 @@ mssql:
     log-mode: ""
     log-zap: false
 sqlite:
-    path: ""
+    path: ./data
     port: ""
     config: ""
-    db-name: ""
+    db-name: gva.db
     username: ""
     password: ""
     max-idle-conns: 10
@@ -235,18 +235,7 @@ disk-list:
     - mount-point: "/"
 
 cors:
-    mode: strict-whitelist
-    whitelist:
-        - allow-origin: example1.com
-          allow-headers: Content-Type,AccessToken,X-CSRF-Token, Authorization, Token,X-Token,X-User-Id
-          allow-methods: POST, GET
-          expose-headers: Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type
-          allow-credentials: true
-        - allow-origin: example2.com
-          allow-headers: content-type
-          allow-methods: GET, POST
-          expose-headers: Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type
-          allow-credentials: true
+    mode: allow-all
 mcp:
     name: GVA_MCP
     version: v1.0.0

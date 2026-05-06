@@ -39,10 +39,11 @@ export const deleteDriver = (id) => {
   })
 }
 
-export const getOrderList = () => {
+export const getOrderList = (params) => {
   return service({
     url: '/hxzCar/order/list',
-    method: 'get'
+    method: 'get',
+    params: params
   })
 }
 
@@ -114,5 +115,13 @@ export const deletePassenger = (id) => {
     url: '/hxzCar/passenger/delete',
     method: 'delete',
     params: { id: id }
+  })
+}
+
+export const getDashboardStatistics = (date) => {
+  return service({
+    url: '/hxzCar/statistics/dashboard',
+    method: 'get',
+    params: { date: date }
   })
 }

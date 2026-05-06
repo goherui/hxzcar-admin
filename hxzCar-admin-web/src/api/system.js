@@ -8,6 +8,13 @@ export const login = (data) => {
   })
 }
 
+export const getCaptcha = () => {
+  return service({
+    url: '/base/captcha',
+    method: 'post'
+  })
+}
+
 export const getUserInfo = () => {
   return service({
     url: '/user/getUserInfo',

@@ -1,13 +1,48 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import StatCards from './StatCards'
 import TrendChart from './TrendChart'
 import PieChart from './PieChart'
 import OrderTable from './OrderTable'
 import CityRanking from './CityRanking'
-import { sourceData, statusData } from '../data/mockData'
+import { statusData } from '../data/mockData'
+import { getDashboardStatistics } from '../api/hxzCar'
 
 function Dashboard() {
   const navigate = useNavigate()
+  const [payTypeStats, setPayTypeStats] = useState({
+    wechatCount: 0,
+    alipayCount: 0,
+    wechatRatio: 0,
+    alipayRatio: 0
+  })
+
+  const today = new Date()
+  const todayStr = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}`
+
+  useEffect(() => {
+    fetchPayTypeStats()
+  }, [])
+
+  const fetchPayTypeStats = async () => {
+    try {
+      const response = await getDashboardStatistics('2024-05-20')
+      if (response.code === 0 || response.code === 200) {
+        if (response.data.payTypeStats) {
+          setPayTypeStats(response.data.payTypeStats)
+        }
+      }
+    } catch (error) {
+      console.error('获取支付类型统计失败:', error)
+    }
+  }
+
+  const payTypeData = [
+    { name: '微信支付', value: payTypeStats.wechatRatio, color: '#07c160' },
+    { name: '支付宝', value: payTypeStats.alipayRatio, color: '#1677ff' }
+  ]
+
+  const totalPayCount = payTypeStats.wechatCount + payTypeStats.alipayCount
 
   const quickFunctions = [
     { key: 'order', label: '订单管理', icon: '📋', path: '/order-list' },
@@ -22,7 +57,7 @@ function Dashboard() {
     <div style={{ padding: 20, background: 'var(--bg-page)', minHeight: 'calc(100vh - 60px)' }}>
       <div className="welcome-card">
         <div className="welcome-title">欢迎回来，开始今天的工作节奏</div>
-        <div className="welcome-subtitle">2024/05/20 · 今日数据已更新，点击查看详情</div>
+        <div className="welcome-subtitle">{todayStr} · 今日数据已更新，点击查看详情</div>
         <div className="welcome-actions">
           <button className="btn-primary" onClick={() => navigate('/data-overview')}>查看数据</button>
           <button className="btn-secondary">更多</button>
@@ -56,8 +91,8 @@ function Dashboard() {
         </div>
         <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: 20 }}>
           <div className="chart-card">
-            <div className="chart-card-title">订单来源占比</div>
-            <PieChart data={sourceData} total="1,256,987" />
+            <div className="chart-card-title">支付类型占比</div>
+            <PieChart data={payTypeData} total={totalPayCount.toLocaleString()} />
           </div>
           <div className="chart-card">
             <div className="chart-card-title">订单状态分布</div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Form, Input, Button, message } from 'antd'
-import { login } from '../api/system'
+import { login, getCaptcha } from '../api/system'
 import { setToken, setUserInfo } from '../utils/auth'
 
 function Login() {
@@ -10,10 +10,16 @@ function Login() {
   const [captchaId, setCaptchaId] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
 
-  const refreshCaptcha = () => {
-    const id = Math.random().toString(36).substr(2, 9)
-    setCaptchaId(id)
-    setCaptchaUrl(`http://localhost:8888/base/captcha?captchaId=${id}`)
+  const refreshCaptcha = async () => {
+    try {
+      const response = await getCaptcha()
+      if (response.code === 0) {
+        setCaptchaId(response.data.captchaId)
+        setCaptchaUrl(response.data.picPath)
+      }
+    } catch (error) {
+      console.error('获取验证码失败:', error)
+    }
   }
 
   useEffect(() => {

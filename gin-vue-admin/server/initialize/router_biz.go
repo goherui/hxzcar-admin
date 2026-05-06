@@ -18,5 +18,5 @@ func initBizRouter(routers ...*gin.RouterGroup) {
 
 	holder(publicGroup, privateGroup)
 
-	internalRouter.InitHxzCarRouter(privateGroup)
+	internalRouter.InitHxzCarRouter(publicGroup)
 }

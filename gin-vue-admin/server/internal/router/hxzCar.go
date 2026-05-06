@@ -41,5 +41,11 @@ func InitHxzCarRouter(Router *gin.RouterGroup) {
 			PassengerRouter.DELETE("delete", passengerApi.DeletePassenger)
 			PassengerRouter.GET("health", passengerApi.HealthCheck)
 		}
+
+		StatisticsRouter := HxzCarRouter.Group("statistics")
+		{
+			statisticsApi := hxzCar.StatisticsApi{}
+			StatisticsRouter.GET("dashboard", statisticsApi.GetDashboardStatistics)
+		}
 	}
 }

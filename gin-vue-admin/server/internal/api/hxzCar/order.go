@@ -1,10 +1,11 @@
 package hxzCar
 
 import (
-	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
-	hxzCarModel "github.com/flipped-aurora/gin-vue-admin/server/internal/model/hxzCar"
-	hxzCarService "github.com/flipped-aurora/gin-vue-admin/server/internal/service/hxzCar"
 	"net/http"
+
+	hxzCarModel "github.com/flipped-aurora/gin-vue-admin/server/internal/model/hxzCar"
+	"github.com/flipped-aurora/gin-vue-admin/server/internal/service/hxzCar/order"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,7 +13,20 @@ import (
 type OrderApi struct{}
 
 func (api *OrderApi) GetOrderList(c *gin.Context) {
-	orders, err := hxzCarService.OrderService.GetOrderList()
+	var query order.OrderQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.FailWithMessage("参数错误", c)
+		return
+	}
+
+	if query.Page <= 0 {
+		query.Page = 1
+	}
+	if query.PageSize <= 0 {
+		query.PageSize = 10
+	}
+
+	orders, err := order.NewOrderService().GetOrderList(query)
 	if err != nil {
 		response.FailWithMessage("获取订单列表失败", c)
 		return
@@ -28,21 +42,21 @@ func (api *OrderApi) GetOrderByID(c *gin.Context) {
 		response.FailWithMessage("参数错误", c)
 		return
 	}
-	order, err := hxzCarService.OrderService.GetOrderByID(req.ID)
+	orderInfo, err := order.NewOrderService().GetOrderByID(req.ID)
 	if err != nil {
 		response.FailWithMessage("获取订单信息失败", c)
 		return
 	}
-	response.OkWithData(order, c)
+	response.OkWithData(orderInfo, c)
 }
 
 func (api *OrderApi) CreateOrder(c *gin.Context) {
-	var order hxzCarModel.Order
-	if err := c.ShouldBindJSON(&order); err != nil {
+	var orderInfo hxzCarModel.Order
+	if err := c.ShouldBindJSON(&orderInfo); err != nil {
 		response.FailWithMessage("参数错误", c)
 		return
 	}
-	if err := hxzCarService.OrderService.CreateOrder(&order); err != nil {
+	if err := order.NewOrderService().CreateOrder(&orderInfo); err != nil {
 		response.FailWithMessage("创建订单失败", c)
 		return
 	}
@@ -50,12 +64,12 @@ func (api *OrderApi) CreateOrder(c *gin.Context) {
 }
 
 func (api *OrderApi) UpdateOrder(c *gin.Context) {
-	var order hxzCarModel.Order
-	if err := c.ShouldBindJSON(&order); err != nil {
+	var orderInfo hxzCarModel.Order
+	if err := c.ShouldBindJSON(&orderInfo); err != nil {
 		response.FailWithMessage("参数错误", c)
 		return
 	}
-	if err := hxzCarService.OrderService.UpdateOrder(&order); err != nil {
+	if err := order.NewOrderService().UpdateOrder(&orderInfo); err != nil {
 		response.FailWithMessage("更新订单失败", c)
 		return
 	}
@@ -70,7 +84,7 @@ func (api *OrderApi) DeleteOrder(c *gin.Context) {
 		response.FailWithMessage("参数错误", c)
 		return
 	}
-	if err := hxzCarService.OrderService.DeleteOrder(req.ID); err != nil {
+	if err := order.NewOrderService().DeleteOrder(req.ID); err != nil {
 		response.FailWithMessage("删除订单失败", c)
 		return
 	}

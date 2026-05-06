@@ -77,7 +77,7 @@ system:
     iplimit-time: 3600
     router-prefix: ""
     use-strict-auth: false
-    disable-auto-migrate: false
+    disable-auto-migrate: true
 
 captcha:
     key-long: 6

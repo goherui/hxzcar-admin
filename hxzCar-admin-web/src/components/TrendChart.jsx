@@ -1,8 +1,32 @@
+import { useState, useEffect } from 'react'
 import ReactECharts from 'echarts-for-react'
-import { trendData } from '../data/mockData'
-import { Select } from 'antd'
+import { getDashboardStatistics } from '../api/hxzCar'
 
 function TrendChart() {
+  const [data, setData] = useState({
+    hours: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00', '23:00'],
+    orderCount: [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    completeCount: [0, 0, 0, 0, 0, 0, 0, 0, 0]
+  })
+
+  useEffect(() => {
+    fetchTrendData()
+  }, [])
+
+  const fetchTrendData = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const response = await getDashboardStatistics(today)
+      if (response.code === 0 || response.code === 200) {
+        if (response.data.trendData) {
+          setData(response.data.trendData)
+        }
+      }
+    } catch (error) {
+      console.error('获取订单趋势数据失败:', error)
+    }
+  }
+
   const option = {
     tooltip: {
       trigger: 'axis',
@@ -19,12 +43,13 @@ function TrendChart() {
       left: '3%',
       right: '4%',
       bottom: '3%',
+      top: '10%',
       containLabel: true,
     },
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: trendData.hours,
+      data: data.hours,
       axisLine: {
         lineStyle: {
           color: '#ddd',
@@ -62,7 +87,7 @@ function TrendChart() {
         name: '订单量',
         type: 'line',
         smooth: true,
-        data: trendData.orderCount,
+        data: data.orderCount,
         lineStyle: {
           color: '#7c4dff',
           width: 3,
@@ -90,7 +115,7 @@ function TrendChart() {
         name: '完单量',
         type: 'line',
         smooth: true,
-        data: trendData.completeCount,
+        data: data.completeCount,
         lineStyle: {
           color: '#2196f3',
           width: 3,
@@ -118,21 +143,7 @@ function TrendChart() {
   }
 
   return (
-    <div className="trend-chart-card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <span className="chart-card-title">订单趋势</span>
-        <Select
-          defaultValue="按小时"
-          style={{ width: 120 }}
-          options={[
-            { value: 'hour', label: '按小时' },
-            { value: 'day', label: '按天' },
-            { value: 'week', label: '按周' },
-          ]}
-        />
-      </div>
-      <ReactECharts option={option} style={{ height: 300 }} />
-    </div>
+    <ReactECharts option={option} style={{ width: '100%', height: '100%' }} />
   )
 }
 

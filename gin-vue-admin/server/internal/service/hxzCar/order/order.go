@@ -14,14 +14,14 @@ func NewOrderService() *OrderService {
 }
 
 type OrderQuery struct {
-	Keyword      string `json:"keyword" form:"keyword"`      // 订单号/手机号/车牌号
-	City         string `json:"city" form:"city"`         // 城市
-	OrderType    int    `json:"orderType" form:"orderType"`    // 订单类型 1-经济型 2-舒适型 3-特惠快车
-	OrderStatus  int    `json:"orderStatus" form:"orderStatus"`  // 订单状态 1-待接单 2-已接单 3-行程中 4-已完成 5-已取消
-	StartTime    string `json:"startTime" form:"startTime"`    // 开始时间
-	EndTime      string `json:"endTime" form:"endTime"`      // 结束时间
-	Page         int    `json:"page" form:"page"`         // 页码
-	PageSize     int    `json:"pageSize" form:"pageSize"`     // 每页数量
+	Keyword     string `json:"keyword" form:"keyword"`         // 订单号/手机号/车牌号
+	City        string `json:"city" form:"city"`               // 城市
+	OrderType   int    `json:"orderType" form:"orderType"`     // 订单类型 1-经济型 2-舒适型 3-特惠快车
+	OrderStatus int    `json:"orderStatus" form:"orderStatus"` // 订单状态 1-待接单 2-已接单 3-行程中 4-已完成 5-已取消
+	StartTime   string `json:"startTime" form:"startTime"`     // 开始时间
+	EndTime     string `json:"endTime" form:"endTime"`         // 结束时间
+	Page        int    `json:"page" form:"page"`               // 页码
+	PageSize    int    `json:"pageSize" form:"pageSize"`       // 每页数量
 }
 
 type OrderListResponse struct {
@@ -144,10 +144,39 @@ func (s *OrderService) GetOrderList(query OrderQuery) (OrderListResponse, error)
 	return response, nil
 }
 
-func (s *OrderService) GetOrderByID(id uint) (hxzCar.Order, error) {
+type OrderDetailResponse struct {
+	Order     hxzCar.Order      `json:"order"`
+	Driver    *hxzCar.Driver    `json:"driver"`
+	Passenger *hxzCar.Passenger `json:"passenger"`
+}
+
+func (s *OrderService) GetOrderByID(id uint) (OrderDetailResponse, error) {
+	var response OrderDetailResponse
 	var order hxzCar.Order
+
 	err := global.GVA_DB.Where("id = ?", id).First(&order).Error
-	return order, err
+	if err != nil {
+		return response, err
+	}
+	response.Order = order
+
+	if order.DriverID > 0 {
+		var driver hxzCar.Driver
+		err = global.GVA_DB.Where("id = ?", order.DriverID).First(&driver).Error
+		if err == nil {
+			response.Driver = &driver
+		}
+	}
+
+	if order.UserID > 0 {
+		var passenger hxzCar.Passenger
+		err = global.GVA_DB.Where("id = ?", order.UserID).First(&passenger).Error
+		if err == nil {
+			response.Passenger = &passenger
+		}
+	}
+
+	return response, nil
 }
 
 func (s *OrderService) CreateOrder(order *hxzCar.Order) error {

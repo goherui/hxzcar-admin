@@ -5,7 +5,6 @@ import TrendChart from './TrendChart'
 import PieChart from './PieChart'
 import OrderTable from './OrderTable'
 import CityRanking from './CityRanking'
-import { statusData } from '../data/mockData'
 import { getDashboardStatistics } from '../api/hxzCar'
 
 function Dashboard() {
@@ -16,24 +15,38 @@ function Dashboard() {
     wechatRatio: 0,
     alipayRatio: 0
   })
+  const [orderStatusStats, setOrderStatusStats] = useState({
+    completed: 0,
+    inProgress: 0,
+    canceled: 0,
+    abnormal: 0,
+    completedRatio: 0,
+    inProgressRatio: 0,
+    canceledRatio: 0,
+    abnormalRatio: 0
+  })
 
   const today = new Date()
   const todayStr = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}`
 
   useEffect(() => {
-    fetchPayTypeStats()
+    fetchStatistics()
   }, [])
 
-  const fetchPayTypeStats = async () => {
+  const fetchStatistics = async () => {
     try {
-      const response = await getDashboardStatistics('2024-05-20')
+      const today = new Date().toISOString().split('T')[0]
+      const response = await getDashboardStatistics(today)
       if (response.code === 0 || response.code === 200) {
         if (response.data.payTypeStats) {
           setPayTypeStats(response.data.payTypeStats)
         }
+        if (response.data.orderStatusStats) {
+          setOrderStatusStats(response.data.orderStatusStats)
+        }
       }
     } catch (error) {
-      console.error('获取支付类型统计失败:', error)
+      console.error('获取统计数据失败:', error)
     }
   }
 
@@ -42,7 +55,15 @@ function Dashboard() {
     { name: '支付宝', value: payTypeStats.alipayRatio, color: '#1677ff' }
   ]
 
+  const orderStatusData = [
+    { name: '已完成', value: orderStatusStats.completedRatio, color: '#1677ff' },
+    { name: '进行中', value: orderStatusStats.inProgressRatio, color: '#52c41a' },
+    { name: '已取消', value: orderStatusStats.canceledRatio, color: '#faad14' },
+    { name: '异常', value: orderStatusStats.abnormalRatio, color: '#f5222d' }
+  ]
+
   const totalPayCount = payTypeStats.wechatCount + payTypeStats.alipayCount
+  const totalOrderCount = orderStatusStats.completed + orderStatusStats.inProgress + orderStatusStats.canceled + orderStatusStats.abnormal
 
   const quickFunctions = [
     { key: 'order', label: '订单管理', icon: '📋', path: '/order-list' },
@@ -69,7 +90,7 @@ function Dashboard() {
       </div>
 
       <div className="charts-section" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20, marginBottom: 20 }}>
-        <div className="chart-card">
+        <div className="chart-card" style={{ minHeight: '450px' }}>
           <div className="chart-card-header">
             <span className="chart-card-title">订单趋势</span>
             <select 
@@ -87,7 +108,9 @@ function Dashboard() {
               <option>按周</option>
             </select>
           </div>
-          <TrendChart />
+          <div style={{ height: 'calc(100% - 50px)' }}>
+            <TrendChart />
+          </div>
         </div>
         <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: 20 }}>
           <div className="chart-card">
@@ -96,7 +119,7 @@ function Dashboard() {
           </div>
           <div className="chart-card">
             <div className="chart-card-title">订单状态分布</div>
-            <PieChart data={statusData} total="1,256,987" />
+            <PieChart data={orderStatusData} total={totalOrderCount.toLocaleString()} />
           </div>
         </div>
       </div>
@@ -142,17 +165,13 @@ function Dashboard() {
           <OrderTable />
         </div>
         <div>
-          <div className="city-ranking-card">
-            <div className="city-ranking-card-header">
-              <span className="city-ranking-card-title">城市订单排名</span>
-              <span className="city-ranking-card-more">更多 ›</span>
-            </div>
+          <div className="city-ranking-card" style={{ background: '#fff', borderRadius: '8px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: '#333' }}>城市订单排名</div>
             <CityRanking />
           </div>
           <div className="quick-function-card" style={{ marginTop: 20 }}>
             <div className="quick-function-title">
               <span>快捷功能</span>
-              <span className="city-ranking-card-more">更多 ›</span>
             </div>
             <div className="quick-function-grid">
               {quickFunctions.map(item => (

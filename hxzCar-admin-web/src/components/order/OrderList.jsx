@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Table, Select, Button, Input, Tag, DatePicker } from 'antd'
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons'
 import { getOrderList } from '@/api/hxzCar'
@@ -40,6 +41,7 @@ const orderStatusOptions = [
 ]
 
 function OrderList() {
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [data, setData] = useState([])
   const [total, setTotal] = useState(0)
@@ -261,13 +263,15 @@ function OrderList() {
     {
       title: '操作',
       key: 'action',
-      width: 80,
+      width: 60,
       align: 'center',
-      render: () => (
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-          <Button type="link" size="small" style={{ padding: 0, color: '#3b82f6', fontSize: 11 }}>详情</Button>
-          <Button type="link" size="small" style={{ padding: 0, color: '#3b82f6', fontSize: 11 }}>追踪</Button>
-        </div>
+      render: (_, record) => (
+        <Button 
+          type="link" 
+          size="small" 
+          style={{ padding: 0, color: '#3b82f6', fontSize: 11 }}
+          onClick={() => navigate(`/order-detail/${record.id}`)}
+        >详情</Button>
       ),
     },
   ]

@@ -1,7 +1,34 @@
-import { Button } from 'antd'
-import { cityRanking } from '../data/mockData'
+import { useState, useEffect } from 'react'
+import { getDashboardStatistics } from '../api/hxzCar'
 
 function CityRanking() {
+  const [data, setData] = useState([])
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const fetchData = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const response = await getDashboardStatistics(today)
+      if (response.code === 0 || response.code === 200) {
+        if (response.data.cityRanking) {
+          setData(response.data.cityRanking)
+        }
+      }
+    } catch (error) {
+      console.error('获取城市排名数据失败:', error)
+      setData([
+        { cityName: '北京市', orderCount: 15, ranking: 1, orderCountDiff: 12.35 },
+        { cityName: '上海市', orderCount: 12, ranking: 2, orderCountDiff: 11.24 },
+        { cityName: '广州市', orderCount: 10, ranking: 3, orderCountDiff: 10.32 },
+        { cityName: '深圳市', orderCount: 8, ranking: 4, orderCountDiff: 8.78 },
+        { cityName: '成都市', orderCount: 7, ranking: 5, orderCountDiff: 7.21 },
+      ])
+    }
+  }
+
   const getRankingClass = (rank) => {
     switch (rank) {
       case 1:
@@ -16,29 +43,21 @@ function CityRanking() {
   }
 
   return (
-    <div className="city-ranking-card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <span className="chart-card-title">城市订单排名</span>
-        <Button type="link" style={{ color: '#7c4dff', padding: 0 }}>
-          更多 &gt;
-        </Button>
-      </div>
-      <div>
-        {cityRanking.map((item) => (
-          <div key={item.rank} className="ranking-item">
-            <div className={`ranking-number ${getRankingClass(item.rank)}`}>
-              {item.rank}
-            </div>
-            <div className="ranking-info">
-              <div className="ranking-city">{item.city}</div>
-              <div className="ranking-count">{item.count.toLocaleString()} 单</div>
-            </div>
-            <div className={`ranking-change ${item.isPositive ? '' : 'negative'}`}>
-              {item.change}
-            </div>
+    <div className="city-ranking-content">
+      {data.map((item) => (
+        <div key={item.ranking} className="ranking-item">
+          <div className={`ranking-number ${getRankingClass(item.ranking)}`}>
+            {item.ranking}
           </div>
-        ))}
-      </div>
+          <div className="ranking-info">
+            <div className="ranking-city">{item.cityName}</div>
+            <div className="ranking-count">{item.orderCount.toLocaleString()} 单</div>
+          </div>
+          <div className={`ranking-change ${item.orderCountDiff >= 0 ? '' : 'negative'}`}>
+            {item.orderCountDiff >= 0 ? '+' : ''}{item.orderCountDiff.toFixed(2)}%
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

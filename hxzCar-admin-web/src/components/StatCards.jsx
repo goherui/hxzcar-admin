@@ -25,7 +25,8 @@ function StatCards() {
 
   const fetchStatistics = async () => {
     try {
-      const response = await getDashboardStatistics('2024-05-20')
+      const today = new Date().toISOString().split('T')[0]
+      const response = await getDashboardStatistics(today)
       console.log('统计数据响应:', response)
       if (response.code === 0 || response.code === 200) {
         setStats(response.data)

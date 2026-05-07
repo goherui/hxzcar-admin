@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar'
 import Header from './components/Header'
 import Login from './components/Login'
 import Dashboard from './components/Dashboard'
+import OrderDetail from './components/OrderDetail'
 import OrderList from './components/order/OrderList'
 import OrderMonitor from './components/order/OrderMonitor'
 import AbnormalOrder from './components/order/AbnormalOrder'
@@ -44,6 +45,7 @@ function App() {
               <main style={{ flex: 1, overflowX: 'auto', overflowY: 'auto' }}>
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
+                  <Route path="/order-detail/:id" element={<OrderDetail />} />
                   <Route path="/order-list" element={<OrderList />} />
                   <Route path="/order-monitor" element={<OrderMonitor />} />
                   <Route path="/abnormal-order" element={<AbnormalOrder />} />

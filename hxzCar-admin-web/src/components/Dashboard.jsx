@@ -9,21 +9,43 @@ import { getDashboardStatistics } from '../api/hxzCar'
 
 function Dashboard() {
   const navigate = useNavigate()
-  const [payTypeStats, setPayTypeStats] = useState({
-    wechatCount: 0,
-    alipayCount: 0,
-    wechatRatio: 0,
-    alipayRatio: 0
-  })
-  const [orderStatusStats, setOrderStatusStats] = useState({
-    completed: 0,
-    inProgress: 0,
-    canceled: 0,
-    abnormal: 0,
-    completedRatio: 0,
-    inProgressRatio: 0,
-    canceledRatio: 0,
-    abnormalRatio: 0
+  const [stats, setStats] = useState({
+    today: {
+      orderCount: 0,
+      completeCount: 0,
+      activeUsers: 0,
+      activeDrivers: 0,
+      revenue: 0,
+      avgOrderValue: 0
+    },
+    orderCountDiff: 0,
+    completeCountDiff: 0,
+    activeUsersDiff: 0,
+    activeDriversDiff: 0,
+    revenueDiff: 0,
+    avgOrderValueDiff: 0,
+    payTypeStats: {
+      wechatCount: 0,
+      alipayCount: 0,
+      wechatRatio: 0,
+      alipayRatio: 0
+    },
+    orderStatusStats: {
+      completed: 0,
+      inProgress: 0,
+      canceled: 0,
+      abnormal: 0,
+      completedRatio: 0,
+      inProgressRatio: 0,
+      canceledRatio: 0,
+      abnormalRatio: 0
+    },
+    cityRanking: [],
+    trendData: {
+      hours: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00', '23:00'],
+      orderCount: [0, 0, 0, 0, 0, 0, 0, 0, 0],
+      completeCount: [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    }
   })
 
   const today = new Date()
@@ -38,12 +60,7 @@ function Dashboard() {
       const today = new Date().toISOString().split('T')[0]
       const response = await getDashboardStatistics(today)
       if (response.code === 0 || response.code === 200) {
-        if (response.data.payTypeStats) {
-          setPayTypeStats(response.data.payTypeStats)
-        }
-        if (response.data.orderStatusStats) {
-          setOrderStatusStats(response.data.orderStatusStats)
-        }
+        setStats(response.data)
       }
     } catch (error) {
       console.error('获取统计数据失败:', error)
@@ -51,19 +68,19 @@ function Dashboard() {
   }
 
   const payTypeData = [
-    { name: '微信支付', value: payTypeStats.wechatRatio, color: '#07c160' },
-    { name: '支付宝', value: payTypeStats.alipayRatio, color: '#1677ff' }
+    { name: '微信支付', value: stats.payTypeStats.wechatRatio, color: '#07c160' },
+    { name: '支付宝', value: stats.payTypeStats.alipayRatio, color: '#1677ff' }
   ]
 
   const orderStatusData = [
-    { name: '已完成', value: orderStatusStats.completedRatio, color: '#1677ff' },
-    { name: '进行中', value: orderStatusStats.inProgressRatio, color: '#52c41a' },
-    { name: '已取消', value: orderStatusStats.canceledRatio, color: '#faad14' },
-    { name: '异常', value: orderStatusStats.abnormalRatio, color: '#f5222d' }
+    { name: '已完成', value: stats.orderStatusStats.completedRatio, color: '#1677ff' },
+    { name: '进行中', value: stats.orderStatusStats.inProgressRatio, color: '#52c41a' },
+    { name: '已取消', value: stats.orderStatusStats.canceledRatio, color: '#faad14' },
+    { name: '异常', value: stats.orderStatusStats.abnormalRatio, color: '#f5222d' }
   ]
 
-  const totalPayCount = payTypeStats.wechatCount + payTypeStats.alipayCount
-  const totalOrderCount = orderStatusStats.completed + orderStatusStats.inProgress + orderStatusStats.canceled + orderStatusStats.abnormal
+  const totalPayCount = stats.payTypeStats.wechatCount + stats.payTypeStats.alipayCount
+  const totalOrderCount = stats.orderStatusStats.completed + stats.orderStatusStats.inProgress + stats.orderStatusStats.canceled + stats.orderStatusStats.abnormal
 
   const quickFunctions = [
     { key: 'order', label: '订单管理', icon: '📋', path: '/order-list' },
@@ -86,7 +103,7 @@ function Dashboard() {
       </div>
 
       <div className="stats-section" style={{ marginBottom: 20 }}>
-        <StatCards />
+        <StatCards stats={stats} />
       </div>
 
       <div className="charts-section" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20, marginBottom: 20 }}>
@@ -109,7 +126,7 @@ function Dashboard() {
             </select>
           </div>
           <div style={{ height: 'calc(100% - 50px)' }}>
-            <TrendChart />
+            <TrendChart trendData={stats.trendData} />
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: 20 }}>
@@ -167,7 +184,7 @@ function Dashboard() {
         <div>
           <div className="city-ranking-card" style={{ background: '#fff', borderRadius: '8px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
             <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: '#333' }}>城市订单排名</div>
-            <CityRanking />
+            <CityRanking cityRanking={stats.cityRanking} />
           </div>
           <div className="quick-function-card" style={{ marginTop: 20 }}>
             <div className="quick-function-title">

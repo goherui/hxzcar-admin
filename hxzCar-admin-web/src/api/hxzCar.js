@@ -125,3 +125,58 @@ export const getDashboardStatistics = (date) => {
     params: { date: date }
   })
 }
+
+export const getMonitorData = (date) => {
+  return service({
+    url: '/hxzCar/monitor/data',
+    method: 'get',
+    params: { date: date }
+  })
+}
+
+export const getLatestOrders = () => {
+  return service({
+    url: '/hxzCar/monitor/latest-orders',
+    method: 'get'
+  })
+}
+
+export const getMonitorStats = (date) => {
+  return service({
+    url: '/hxzCar/monitor/stats',
+    method: 'get',
+    params: { date: date }
+  })
+}
+
+export const getAbnormalStats = (date) => {
+  return service({
+    url: '/hxzCar/abnormal/stats',
+    method: 'get',
+    params: { date: date }
+  })
+}
+
+export const getAbnormalOrders = (params) => {
+  return service({
+    url: '/hxzCar/abnormal/orders',
+    method: 'get',
+    params: params
+  })
+}
+
+export const updateAbnormalStatus = (id, status) => {
+  return service({
+    url: '/hxzCar/abnormal/status',
+    method: 'put',
+    params: { id, status }
+  })
+}
+
+export const batchProcessAbnormal = (ids, status) => {
+  return service({
+    url: '/hxzCar/abnormal/batch',
+    method: 'post',
+    data: { ids, status }
+  })
+}

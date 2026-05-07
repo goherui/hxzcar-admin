@@ -1,30 +1,10 @@
-import { useState, useEffect } from 'react'
 import ReactECharts from 'echarts-for-react'
-import { getDashboardStatistics } from '../api/hxzCar'
 
-function TrendChart() {
-  const [data, setData] = useState({
+function TrendChart({ trendData }) {
+  const data = trendData || {
     hours: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00', '23:00'],
     orderCount: [0, 0, 0, 0, 0, 0, 0, 0, 0],
     completeCount: [0, 0, 0, 0, 0, 0, 0, 0, 0]
-  })
-
-  useEffect(() => {
-    fetchTrendData()
-  }, [])
-
-  const fetchTrendData = async () => {
-    try {
-      const today = new Date().toISOString().split('T')[0]
-      const response = await getDashboardStatistics(today)
-      if (response.code === 0 || response.code === 200) {
-        if (response.data.trendData) {
-          setData(response.data.trendData)
-        }
-      }
-    } catch (error) {
-      console.error('获取订单趋势数据失败:', error)
-    }
   }
 
   const option = {

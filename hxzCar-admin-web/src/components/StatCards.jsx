@@ -1,40 +1,4 @@
-import { useState, useEffect } from 'react'
-import { getDashboardStatistics } from '../api/hxzCar'
-
-function StatCards() {
-  const [stats, setStats] = useState({
-    today: {
-      orderCount: 0,
-      completeCount: 0,
-      activeUsers: 0,
-      activeDrivers: 0,
-      revenue: 0,
-      avgOrderValue: 0
-    },
-    orderCountDiff: 0,
-    completeCountDiff: 0,
-    activeUsersDiff: 0,
-    activeDriversDiff: 0,
-    revenueDiff: 0,
-    avgOrderValueDiff: 0
-  })
-
-  useEffect(() => {
-    fetchStatistics()
-  }, [])
-
-  const fetchStatistics = async () => {
-    try {
-      const today = new Date().toISOString().split('T')[0]
-      const response = await getDashboardStatistics(today)
-      console.log('统计数据响应:', response)
-      if (response.code === 0 || response.code === 200) {
-        setStats(response.data)
-      }
-    } catch (error) {
-      console.error('获取统计数据失败:', error)
-    }
-  }
+function StatCards({ stats }) {
 
   const statItems = [
     {

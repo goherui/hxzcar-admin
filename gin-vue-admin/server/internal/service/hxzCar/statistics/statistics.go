@@ -15,12 +15,12 @@ func NewStatisticsService() *StatisticsService {
 
 type DailyStatistics struct {
 	Date          string  `json:"date"`
-	OrderCount    int64   `json:"orderCount"`    // 订单量
-	CompleteCount int64   `json:"completeCount"` // 完单量
-	ActiveUsers   int64   `json:"activeUsers"`   // 活跃用户数
-	ActiveDrivers int64   `json:"activeDrivers"` // 活跃司机数
-	Revenue       float64 `json:"revenue"`       // 收入(GMV)
-	AvgOrderValue float64 `json:"avgOrderValue"` // 客单价
+	OrderCount    int64   `json:"orderCount"`
+	CompleteCount int64   `json:"completeCount"`
+	ActiveUsers   int64   `json:"activeUsers"`
+	ActiveDrivers int64   `json:"activeDrivers"`
+	Revenue       float64 `json:"revenue"`
+	AvgOrderValue float64 `json:"avgOrderValue"`
 }
 
 type PayTypeStatistics struct {
@@ -31,10 +31,10 @@ type PayTypeStatistics struct {
 }
 
 type OrderStatusStatistics struct {
-	Completed       int64   `json:"completed"`  // 已完成 (状态4)
-	InProgress      int64   `json:"inProgress"` // 进行中 (状态1,2,3)
-	Canceled        int64   `json:"canceled"`   // 已取消 (状态5)
-	Abnormal        int64   `json:"abnormal"`   // 异常 (其他状态)
+	Completed       int64   `json:"completed"`
+	InProgress      int64   `json:"inProgress"`
+	Canceled        int64   `json:"canceled"`
+	Abnormal        int64   `json:"abnormal"`
 	CompletedRatio  float64 `json:"completedRatio"`
 	InProgressRatio float64 `json:"inProgressRatio"`
 	CanceledRatio   float64 `json:"canceledRatio"`
@@ -71,57 +71,36 @@ type StatisticsResponse struct {
 
 func (s *StatisticsService) GetDailyStatistics(dateStr string) (DailyStatistics, error) {
 	var stats DailyStatistics
-
 	stats.Date = dateStr
 
-	// 计算订单量（指定日期的所有订单）
-	err := global.GVA_DB.Model(&hxzCar.Order{}).
-		Where("DATE(create_time) = ?", dateStr).
-		Count(&stats.OrderCount).Error
+	type result struct {
+		OrderCount    int64   `json:"order_count"`
+		CompleteCount int64   `json:"complete_count"`
+		ActiveUsers   int64   `json:"active_users"`
+		ActiveDrivers int64   `json:"active_drivers"`
+		Revenue       float64 `json:"revenue"`
+	}
+
+	var res result
+	err := global.GVA_DB.Raw(
+		"SELECT "+
+			"(SELECT COUNT(*) FROM `order` WHERE DATE(create_time) = ?) as order_count,"+
+			"(SELECT COUNT(*) FROM `order` WHERE DATE(create_time) = ? AND order_status = 4) as complete_count,"+
+			"(SELECT COUNT(DISTINCT user_id) FROM `order` WHERE DATE(create_time) = ?) as active_users,"+
+			"(SELECT COUNT(DISTINCT driver_id) FROM `order` WHERE DATE(create_time) = ? AND driver_id > 0) as active_drivers,"+
+			"(SELECT COALESCE(SUM(total_amount), 0) FROM `order` WHERE DATE(create_time) = ?) as revenue",
+		dateStr, dateStr, dateStr, dateStr, dateStr).Scan(&res).Error
+
 	if err != nil {
 		return stats, err
 	}
 
-	// 计算完单量（指定日期状态为4的订单）
-	err = global.GVA_DB.Model(&hxzCar.Order{}).
-		Where("DATE(create_time) = ? AND order_status = 4", dateStr).
-		Count(&stats.CompleteCount).Error
-	if err != nil {
-		return stats, err
-	}
+	stats.OrderCount = res.OrderCount
+	stats.CompleteCount = res.CompleteCount
+	stats.ActiveUsers = res.ActiveUsers
+	stats.ActiveDrivers = res.ActiveDrivers
+	stats.Revenue = res.Revenue
 
-	// 计算活跃用户数（指定日期有订单的用户）
-	err = global.GVA_DB.Model(&hxzCar.Order{}).
-		Where("DATE(create_time) = ?", dateStr).
-		Distinct("user_id").
-		Count(&stats.ActiveUsers).Error
-	if err != nil {
-		return stats, err
-	}
-
-	// 计算活跃司机数（指定日期有订单的司机）
-	err = global.GVA_DB.Model(&hxzCar.Order{}).
-		Where("DATE(create_time) = ? AND driver_id > 0", dateStr).
-		Distinct("driver_id").
-		Count(&stats.ActiveDrivers).Error
-	if err != nil {
-		return stats, err
-	}
-
-	// 计算收入（指定日期所有订单的总金额）
-	var revenue *float64
-	err = global.GVA_DB.Model(&hxzCar.Order{}).
-		Where("DATE(create_time) = ?", dateStr).
-		Select("SUM(total_amount)").
-		Scan(&revenue).Error
-	if err != nil {
-		return stats, err
-	}
-	if revenue != nil {
-		stats.Revenue = *revenue
-	}
-
-	// 计算客单价（收入 / 订单量）
 	if stats.OrderCount > 0 {
 		stats.AvgOrderValue = stats.Revenue / float64(stats.OrderCount)
 	}
@@ -129,78 +108,64 @@ func (s *StatisticsService) GetDailyStatistics(dateStr string) (DailyStatistics,
 	return stats, nil
 }
 
-func (s *StatisticsService) GetPayTypeStatistics(dateStr string) (PayTypeStatistics, error) {
-	var stats PayTypeStatistics
+func (s *StatisticsService) GetPayTypeAndStatusStatistics(dateStr string) (PayTypeStatistics, OrderStatusStatistics, error) {
+	var payStats PayTypeStatistics
+	var statusStats OrderStatusStatistics
 
-	// 查询指定日期订单的支付类型统计
-	err := global.GVA_DB.Model(&hxzCar.Order{}).
-		Where("DATE(create_time) = ? AND pay_type = 1", dateStr).
-		Count(&stats.WechatCount).Error
+	type payResult struct {
+		WechatCount int64 `json:"wechat_count"`
+		AlipayCount int64 `json:"alipay_count"`
+	}
+	var payRes payResult
+	err := global.GVA_DB.Raw(
+		"SELECT "+
+			"(SELECT COUNT(*) FROM `order` WHERE DATE(create_time) = ? AND pay_type = 1) as wechat_count,"+
+			"(SELECT COUNT(*) FROM `order` WHERE DATE(create_time) = ? AND pay_type = 2) as alipay_count",
+		dateStr, dateStr).Scan(&payRes).Error
 	if err != nil {
-		return stats, err
+		return payStats, statusStats, err
 	}
 
-	err = global.GVA_DB.Model(&hxzCar.Order{}).
-		Where("DATE(create_time) = ? AND pay_type = 2", dateStr).
-		Count(&stats.AlipayCount).Error
+	payStats.WechatCount = payRes.WechatCount
+	payStats.AlipayCount = payRes.AlipayCount
+	totalPay := payStats.WechatCount + payStats.AlipayCount
+	if totalPay > 0 {
+		payStats.WechatRatio = float64(payStats.WechatCount) / float64(totalPay) * 100
+		payStats.AlipayRatio = float64(payStats.AlipayCount) / float64(totalPay) * 100
+	}
+
+	type statusResult struct {
+		Completed  int64 `json:"completed"`
+		InProgress int64 `json:"in_progress"`
+		Canceled   int64 `json:"canceled"`
+		Abnormal   int64 `json:"abnormal"`
+	}
+	var statusRes statusResult
+	err = global.GVA_DB.Raw(
+		"SELECT "+
+			"(SELECT COUNT(*) FROM `order` WHERE DATE(create_time) = ? AND order_status = 4) as completed,"+
+			"(SELECT COUNT(*) FROM `order` WHERE DATE(create_time) = ? AND order_status IN (1, 2, 3)) as in_progress,"+
+			"(SELECT COUNT(*) FROM `order` WHERE DATE(create_time) = ? AND order_status = 5) as canceled,"+
+			"(SELECT COUNT(*) FROM `order` WHERE DATE(create_time) = ? AND order_status NOT IN (1, 2, 3, 4, 5)) as abnormal",
+		dateStr, dateStr, dateStr, dateStr).Scan(&statusRes).Error
 	if err != nil {
-		return stats, err
+		return payStats, statusStats, err
 	}
 
-	total := stats.WechatCount + stats.AlipayCount
-	if total > 0 {
-		stats.WechatRatio = float64(stats.WechatCount) / float64(total) * 100
-		stats.AlipayRatio = float64(stats.AlipayCount) / float64(total) * 100
+	statusStats.Completed = statusRes.Completed
+	statusStats.InProgress = statusRes.InProgress
+	statusStats.Canceled = statusRes.Canceled
+	statusStats.Abnormal = statusRes.Abnormal
+
+	totalStatus := statusStats.Completed + statusStats.InProgress + statusStats.Canceled + statusStats.Abnormal
+	if totalStatus > 0 {
+		statusStats.CompletedRatio = float64(statusStats.Completed) / float64(totalStatus) * 100
+		statusStats.InProgressRatio = float64(statusStats.InProgress) / float64(totalStatus) * 100
+		statusStats.CanceledRatio = float64(statusStats.Canceled) / float64(totalStatus) * 100
+		statusStats.AbnormalRatio = float64(statusStats.Abnormal) / float64(totalStatus) * 100
 	}
 
-	return stats, nil
-}
-
-func (s *StatisticsService) GetOrderStatusStatistics(dateStr string) (OrderStatusStatistics, error) {
-	var stats OrderStatusStatistics
-
-	// 查询已完成订单（状态4）
-	err := global.GVA_DB.Model(&hxzCar.Order{}).
-		Where("DATE(create_time) = ? AND order_status = 4", dateStr).
-		Count(&stats.Completed).Error
-	if err != nil {
-		return stats, err
-	}
-
-	// 查询进行中订单（状态1,2,3）
-	err = global.GVA_DB.Model(&hxzCar.Order{}).
-		Where("DATE(create_time) = ? AND order_status IN (1, 2, 3)", dateStr).
-		Count(&stats.InProgress).Error
-	if err != nil {
-		return stats, err
-	}
-
-	// 查询已取消订单（状态5）
-	err = global.GVA_DB.Model(&hxzCar.Order{}).
-		Where("DATE(create_time) = ? AND order_status = 5", dateStr).
-		Count(&stats.Canceled).Error
-	if err != nil {
-		return stats, err
-	}
-
-	// 查询异常订单（其他状态）
-	err = global.GVA_DB.Model(&hxzCar.Order{}).
-		Where("DATE(create_time) = ? AND order_status NOT IN (1, 2, 3, 4, 5)", dateStr).
-		Count(&stats.Abnormal).Error
-	if err != nil {
-		return stats, err
-	}
-
-	// 计算占比
-	total := stats.Completed + stats.InProgress + stats.Canceled + stats.Abnormal
-	if total > 0 {
-		stats.CompletedRatio = float64(stats.Completed) / float64(total) * 100
-		stats.InProgressRatio = float64(stats.InProgress) / float64(total) * 100
-		stats.CanceledRatio = float64(stats.Canceled) / float64(total) * 100
-		stats.AbnormalRatio = float64(stats.Abnormal) / float64(total) * 100
-	}
-
-	return stats, nil
+	return payStats, statusStats, nil
 }
 
 func (s *StatisticsService) GetTrendData(dateStr string) (TrendData, error) {
@@ -216,19 +181,31 @@ func (s *StatisticsService) GetTrendData(dateStr string) (TrendData, error) {
 		{0, 3}, {3, 6}, {6, 9}, {9, 12}, {12, 15}, {15, 18}, {18, 21}, {21, 23}, {23, 24},
 	}
 
-	for i, tr := range timeRanges {
-		err := global.GVA_DB.Model(&hxzCar.Order{}).
-			Where("DATE(create_time) = ? AND HOUR(create_time) >= ? AND HOUR(create_time) < ?", dateStr, tr.start, tr.end).
-			Count(&orderCounts[i]).Error
-		if err != nil {
-			return trend, err
-		}
+	sql := "SELECT HOUR(create_time) as hour, COUNT(*) as total_count, SUM(CASE WHEN order_status = 4 THEN 1 ELSE 0 END) as complete_count FROM `order` WHERE DATE(create_time) = ? GROUP BY HOUR(create_time)"
 
-		err = global.GVA_DB.Model(&hxzCar.Order{}).
-			Where("DATE(create_time) = ? AND HOUR(create_time) >= ? AND HOUR(create_time) < ? AND order_status = 4", dateStr, tr.start, tr.end).
-			Count(&completeCounts[i]).Error
-		if err != nil {
-			return trend, err
+	type trendRow struct {
+		Hour           int   `json:"hour"`
+		TotalCount     int64 `json:"total_count"`
+		CompleteCount  int64 `json:"complete_count"`
+	}
+
+	var rows []trendRow
+	err := global.GVA_DB.Raw(sql, dateStr).Scan(&rows).Error
+	if err != nil {
+		return trend, err
+	}
+
+	hourMap := make(map[int]trendRow)
+	for _, row := range rows {
+		hourMap[row.Hour] = row
+	}
+
+	for i, tr := range timeRanges {
+		for h := tr.start; h < tr.end; h++ {
+			if row, ok := hourMap[h]; ok {
+				orderCounts[i] += row.TotalCount
+				completeCounts[i] += row.CompleteCount
+			}
 		}
 	}
 
@@ -253,11 +230,10 @@ func (s *StatisticsService) GetCityRanking(dateStr string) ([]CityRankingItem, e
 	}
 
 	cityOrders := make(map[string]int64)
-
-	for city, fullName := range cityMappings {
+	for prefix, fullName := range cityMappings {
 		var count int64
 		err := global.GVA_DB.Model(&hxzCar.Order{}).
-			Where("DATE(create_time) = ? AND start_address LIKE ?", dateStr, city+"%").
+			Where("DATE(create_time) = ? AND start_address LIKE ?", dateStr, prefix+"%").
 			Count(&count).Error
 		if err != nil {
 			return nil, err
@@ -310,9 +286,12 @@ func (s *StatisticsService) GetDashboardStatistics(dateStr string) (StatisticsRe
 	}
 
 	var todayCount int64
-	global.GVA_DB.Model(&hxzCar.Order{}).
+	err := global.GVA_DB.Model(&hxzCar.Order{}).
 		Where("DATE(create_time) = ?", today).
-		Count(&todayCount)
+		Count(&todayCount).Error
+	if err != nil {
+		return response, err
+	}
 
 	if todayCount == 0 {
 		var latestTime time.Time
@@ -339,7 +318,7 @@ func (s *StatisticsService) GetDashboardStatistics(dateStr string) (StatisticsRe
 		return response, err
 	}
 
-	payTypeStats, err := s.GetPayTypeStatistics(today)
+	payTypeStats, orderStatusStats, err := s.GetPayTypeAndStatusStatistics(today)
 	if err != nil {
 		return response, err
 	}
@@ -347,29 +326,20 @@ func (s *StatisticsService) GetDashboardStatistics(dateStr string) (StatisticsRe
 	response.Today = todayStats
 	response.Yesterday = yesterdayStats
 	response.PayTypeStats = payTypeStats
-
-	// 获取订单状态统计
-	orderStatusStats, err := s.GetOrderStatusStatistics(today)
-	if err != nil {
-		return response, err
-	}
 	response.OrderStatusStats = orderStatusStats
 
-	// 获取城市订单排名
 	cityRanking, err := s.GetCityRanking(today)
 	if err != nil {
 		return response, err
 	}
 	response.CityRanking = cityRanking
 
-	// 获取订单趋势数据
 	trendData, err := s.GetTrendData(today)
 	if err != nil {
 		return response, err
 	}
 	response.TrendData = trendData
 
-	// 计算环比差异
 	response.OrderCountDiff = calculateDiff(todayStats.OrderCount, yesterdayStats.OrderCount)
 	response.CompleteCountDiff = calculateDiff(todayStats.CompleteCount, yesterdayStats.CompleteCount)
 	response.ActiveUsersDiff = calculateDiff(todayStats.ActiveUsers, yesterdayStats.ActiveUsers)

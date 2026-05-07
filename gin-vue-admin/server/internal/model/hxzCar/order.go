@@ -27,6 +27,7 @@ type Order struct {
 	DiscountAmount  float64   `gorm:"column:discount_amount;default:0.00;comment:优惠金额"`
 	PayAmount       float64   `gorm:"column:pay_amount;default:0.00;comment:实付金额"`
 	OrderStatus     int       `gorm:"column:order_status;default:1;comment:订单状态 1-待接单 2-已接单 3-行程中 4-已完成 5-已取消 6-异常"`
+	ProcessStatus   int       `gorm:"column:process_status;default:1;comment:处理状态 1-处理中 2-已处理"`
 	PayStatus       int       `gorm:"column:pay_status;default:0;comment:支付状态 0-未支付 1-已支付 2-已退款"`
 	PayType         int       `gorm:"column:pay_type;default:0;comment:支付方式 1-微信 2-支付宝"`
 	CancelReason    string    `gorm:"column:cancel_reason;size:255;comment:取消原因"`

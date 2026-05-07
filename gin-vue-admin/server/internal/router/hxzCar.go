@@ -47,5 +47,22 @@ func InitHxzCarRouter(Router *gin.RouterGroup) {
 			statisticsApi := hxzCar.StatisticsApi{}
 			StatisticsRouter.GET("dashboard", statisticsApi.GetDashboardStatistics)
 		}
+
+		MonitorRouter := HxzCarRouter.Group("monitor")
+		{
+			monitorApi := hxzCar.MonitorApi{}
+			MonitorRouter.GET("data", monitorApi.GetMonitorData)
+			MonitorRouter.GET("latest-orders", monitorApi.GetLatestOrders)
+			MonitorRouter.GET("stats", monitorApi.GetMonitorStats)
+		}
+
+		AbnormalRouter := HxzCarRouter.Group("abnormal")
+		{
+			abnormalApi := hxzCar.AbnormalApi{}
+			AbnormalRouter.GET("stats", abnormalApi.GetAbnormalStats)
+			AbnormalRouter.GET("orders", abnormalApi.GetAbnormalOrders)
+			AbnormalRouter.PUT("status", abnormalApi.UpdateProcessStatus)
+			AbnormalRouter.POST("batch", abnormalApi.BatchProcess)
+		}
 	}
 }

@@ -184,9 +184,9 @@ func (s *StatisticsService) GetTrendData(dateStr string) (TrendData, error) {
 	sql := "SELECT HOUR(create_time) as hour, COUNT(*) as total_count, SUM(CASE WHEN order_status = 4 THEN 1 ELSE 0 END) as complete_count FROM `order` WHERE DATE(create_time) = ? GROUP BY HOUR(create_time)"
 
 	type trendRow struct {
-		Hour           int   `json:"hour"`
-		TotalCount     int64 `json:"total_count"`
-		CompleteCount  int64 `json:"complete_count"`
+		Hour          int   `json:"hour"`
+		TotalCount    int64 `json:"total_count"`
+		CompleteCount int64 `json:"complete_count"`
 	}
 
 	var rows []trendRow

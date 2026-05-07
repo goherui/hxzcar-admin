@@ -11,7 +11,7 @@
  Target Server Version : 80045 (8.0.45)
  File Encoding         : 65001
 
- Date: 06/05/2026 11:04:26
+ Date: 07/05/2026 15:53:51
 */
 
 SET NAMES utf8mb4;
@@ -35,7 +35,7 @@ CREATE TABLE `abnormal_order`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_order_id`(`order_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '异常订单' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '异常订单' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of abnormal_order
@@ -63,7 +63,7 @@ CREATE TABLE `activity`  (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '活动表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '活动表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of activity
@@ -89,7 +89,7 @@ CREATE TABLE `admin`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_username`(`username` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '管理员表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '管理员表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of admin
@@ -110,7 +110,7 @@ CREATE TABLE `admin_role`  (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_admin_role`(`admin_id` ASC, `role_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '管理员角色关联' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '管理员角色关联' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of admin_role
@@ -134,7 +134,7 @@ CREATE TABLE `car`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_car_no`(`car_no` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 19 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车辆表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 19 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车辆表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of car
@@ -177,7 +177,7 @@ CREATE TABLE `coupon`  (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '优惠券表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '优惠券表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of coupon
@@ -209,12 +209,39 @@ CREATE TABLE `daily_statistics`  (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_stat_date_city`(`stat_date` ASC, `city` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '日统计' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '日统计' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of daily_statistics
 -- ----------------------------
 INSERT INTO `daily_statistics` VALUES (1, '2026-05-05', '北京市', 1260, 1235, 3560, 420, 36800.50, 29.85, '2026-05-05 11:17:30');
+
+-- ----------------------------
+-- Table structure for dispatch_rule
+-- ----------------------------
+DROP TABLE IF EXISTS `dispatch_rule`;
+CREATE TABLE `dispatch_rule`  (
+  `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
+  `city_code` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'DEFAULT' COMMENT '城市编码',
+  `rule_code` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '规则编码',
+  `rule_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '规则名称',
+  `rule_value` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '规则值',
+  `rule_type` tinyint NOT NULL DEFAULT 1 COMMENT '1权重 2开关 3数值',
+  `status` tinyint NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_city_rule`(`city_code` ASC, `rule_code` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '派单规则配置' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of dispatch_rule
+-- ----------------------------
+INSERT INTO `dispatch_rule` VALUES (1, 'DEFAULT', 'max_radius', '最大派单半径km', '3', 3, 1);
+INSERT INTO `dispatch_rule` VALUES (2, 'DEFAULT', 'max_retry', '最大重试次数', '5', 3, 1);
+INSERT INTO `dispatch_rule` VALUES (3, 'DEFAULT', 'weight_distance', '距离权重', '40', 1, 1);
+INSERT INTO `dispatch_rule` VALUES (4, 'DEFAULT', 'weight_service', '服务分权重', '30', 1, 1);
+INSERT INTO `dispatch_rule` VALUES (5, 'DEFAULT', 'weight_accept', '接单率权重', '30', 1, 1);
+INSERT INTO `dispatch_rule` VALUES (6, 'DEFAULT', 'enable_black', '启用黑名单', '1', 2, 1);
+INSERT INTO `dispatch_rule` VALUES (7, 'DEFAULT', 'same_city', '仅同城派单', '1', 2, 1);
 
 -- ----------------------------
 -- Table structure for driver
@@ -246,7 +273,7 @@ CREATE TABLE `driver`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_phone`(`phone` ASC) USING BTREE,
   UNIQUE INDEX `uk_id_card`(`id_card` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 19 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '司机表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 19 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '司机表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of driver
@@ -286,12 +313,32 @@ CREATE TABLE `driver_audit`  (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '司机审核表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '司机审核表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of driver_audit
 -- ----------------------------
 INSERT INTO `driver_audit` VALUES (1, 1, 1, '{\"idCard\":\"正面+反面\",\"driverLicense\":\"驾驶证\"}', 1, '资料齐全审核通过', 1, '2026-05-05 11:17:30', '2026-05-05 11:17:30', '2026-05-05 11:17:30');
+
+-- ----------------------------
+-- Table structure for driver_black_white
+-- ----------------------------
+DROP TABLE IF EXISTS `driver_black_white`;
+CREATE TABLE `driver_black_white`  (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `driver_id` bigint NOT NULL,
+  `list_type` tinyint NOT NULL COMMENT '1白 2黑',
+  `reason` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT '',
+  `expire_time` datetime NULL DEFAULT NULL,
+  `status` tinyint NOT NULL DEFAULT 1,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_driver_type`(`driver_id` ASC, `list_type` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '司机黑白名单' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of driver_black_white
+-- ----------------------------
 
 -- ----------------------------
 -- Table structure for driver_comment
@@ -311,7 +358,7 @@ CREATE TABLE `driver_comment`  (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_order_id`(`order_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 27 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '司机评价' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 27 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '司机评价' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of driver_comment
@@ -358,12 +405,38 @@ CREATE TABLE `driver_distribution`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_driver_id`(`driver_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '司机分布' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '司机分布' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of driver_distribution
 -- ----------------------------
 INSERT INTO `driver_distribution` VALUES (1, 1, '北京市', '朝阳区', 116.403874, 39.914885, 1, '2026-05-05 11:17:30');
+
+-- ----------------------------
+-- Table structure for driver_status
+-- ----------------------------
+DROP TABLE IF EXISTS `driver_status`;
+CREATE TABLE `driver_status`  (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `driver_id` bigint NOT NULL COMMENT '司机ID',
+  `work_status` tinyint NOT NULL DEFAULT 0 COMMENT '0离线 1可接单 2行程中 3收工',
+  `current_lng` decimal(10, 6) NOT NULL DEFAULT 0.000000 COMMENT '当前经度',
+  `current_lat` decimal(10, 6) NOT NULL DEFAULT 0.000000 COMMENT '当前纬度',
+  `geo_hash` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '地理位置hash',
+  `service_score` decimal(5, 2) NOT NULL DEFAULT 5.00 COMMENT '服务分',
+  `accept_rate` decimal(5, 2) NOT NULL DEFAULT 100.00 COMMENT '接单率%',
+  `is_qualified` tinyint NOT NULL DEFAULT 1 COMMENT '是否合规 0否1是',
+  `last_report_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '最后位置上报时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_driver_id`(`driver_id` ASC) USING BTREE,
+  INDEX `idx_work`(`work_status` ASC) USING BTREE,
+  INDEX `idx_geo`(`geo_hash` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '司机实时状态表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of driver_status
+-- ----------------------------
 
 -- ----------------------------
 -- Table structure for marketing_tool
@@ -387,7 +460,7 @@ CREATE TABLE `marketing_tool`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_tool_code`(`tool_code` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '营销工具' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '营销工具' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of marketing_tool
@@ -412,7 +485,7 @@ CREATE TABLE `operation_log`  (
   `status` tinyint NOT NULL DEFAULT 1 COMMENT '0失败 1成功',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '操作日志表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '操作日志表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of operation_log
@@ -458,7 +531,7 @@ CREATE TABLE `order`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_order_no`(`order_no` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 31 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '订单主表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 31 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '订单主表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of order
@@ -495,6 +568,33 @@ INSERT INTO `order` VALUES (29, 'ORD20260505033', 11, 14, 14, 1, '舒适型', 3,
 INSERT INTO `order` VALUES (30, 'ORD20260505034', 12, 3, 3, 1, '经济型', 1, '北京亦庄', 116.507200, 39.786500, '北京次渠', 116.546300, 39.767100, 6.70, 28.00, 6.70, 28.00, 28.00, 3.00, 25.00, 4, 1, 1, '', '2026-05-06 02:10:21', '2026-05-06 02:10:21', '2026-05-06 02:10:21', '2026-05-06 02:10:21', NULL, '2026-05-06 02:10:21', '2026-05-06 02:10:21');
 
 -- ----------------------------
+-- Table structure for order_dispatch_log
+-- ----------------------------
+DROP TABLE IF EXISTS `order_dispatch_log`;
+CREATE TABLE `order_dispatch_log`  (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `order_id` bigint NOT NULL,
+  `order_no` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `driver_id` bigint NOT NULL,
+  `driver_name` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `distance` int NOT NULL DEFAULT 0 COMMENT '距离米',
+  `score_total` decimal(8, 2) NOT NULL DEFAULT 0.00 COMMENT '总分',
+  `score_distance` decimal(8, 2) NOT NULL DEFAULT 0.00,
+  `score_service` decimal(8, 2) NOT NULL DEFAULT 0.00,
+  `score_accept` decimal(8, 2) NOT NULL DEFAULT 0.00,
+  `dispatch_status` tinyint NOT NULL COMMENT '1推送 2接单 3拒单 4超时',
+  `response_time` int NULL DEFAULT NULL COMMENT '响应秒数',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_order`(`order_id` ASC) USING BTREE,
+  INDEX `idx_driver`(`driver_id` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '订单派单日志' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of order_dispatch_log
+-- ----------------------------
+
+-- ----------------------------
 -- Table structure for order_monitor
 -- ----------------------------
 DROP TABLE IF EXISTS `order_monitor`;
@@ -511,7 +611,7 @@ CREATE TABLE `order_monitor`  (
   `last_update_time` datetime NOT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_order_id`(`order_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '订单监控' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '订单监控' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of order_monitor
@@ -534,7 +634,7 @@ CREATE TABLE `pay`  (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 31 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '支付记录表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 31 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '支付记录表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of pay
@@ -588,13 +688,33 @@ CREATE TABLE `permission`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_code`(`code` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '权限菜单表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '权限菜单表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of permission
 -- ----------------------------
 INSERT INTO `permission` VALUES (1, 0, '系统管理', 'system', 1, '/system', 'system', 1, 1, '2026-05-05 11:17:30', '2026-05-05 11:17:30');
 INSERT INTO `permission` VALUES (2, 1, '管理员管理', 'system:admin', 2, '/system/admin', 'user', 1, 1, '2026-05-05 11:17:30', '2026-05-05 11:17:30');
+
+-- ----------------------------
+-- Table structure for region_hot
+-- ----------------------------
+DROP TABLE IF EXISTS `region_hot`;
+CREATE TABLE `region_hot`  (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `geo_hash` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `city_code` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'DEFAULT',
+  `order_count` int NOT NULL DEFAULT 0,
+  `driver_count` int NOT NULL DEFAULT 0,
+  `hot_level` tinyint NOT NULL DEFAULT 1 COMMENT '1低2中3高',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_geo`(`geo_hash` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '区域热力供需' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of region_hot
+-- ----------------------------
 
 -- ----------------------------
 -- Table structure for report
@@ -612,7 +732,7 @@ CREATE TABLE `report`  (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '报表中心' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '报表中心' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of report
@@ -633,7 +753,7 @@ CREATE TABLE `role`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_role_code`(`role_code` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '角色表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '角色表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of role
@@ -652,7 +772,7 @@ CREATE TABLE `role_permission`  (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_role_perm`(`role_id` ASC, `permission_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '角色权限关联' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '角色权限关联' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of role_permission
@@ -683,7 +803,7 @@ CREATE TABLE `user`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_phone`(`phone` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 23 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 23 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of user
@@ -725,7 +845,7 @@ CREATE TABLE `user_behavior`  (
   `ip_address` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT '',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户行为' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户行为' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of user_behavior
@@ -752,7 +872,7 @@ CREATE TABLE `user_coupon`  (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 32 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户优惠券' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 32 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户优惠券' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of user_coupon
@@ -805,7 +925,7 @@ CREATE TABLE `user_portrait`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_user_id`(`user_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户画像' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户画像' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of user_portrait
@@ -830,7 +950,7 @@ CREATE TABLE `user_segment`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_segment_code`(`segment_code` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户分群' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户分群' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of user_segment
@@ -848,7 +968,7 @@ CREATE TABLE `user_segment_relation`  (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_segment_user`(`segment_id` ASC, `user_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户分群关联' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户分群关联' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of user_segment_relation

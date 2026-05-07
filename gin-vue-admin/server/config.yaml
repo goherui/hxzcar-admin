@@ -87,7 +87,7 @@ captcha:
     open-captcha-timeout: 3600
 
 mysql:
-    path: localhost
+    path: 115.190.54.31
     port: "3306"
     config: charset=utf8mb4&parseTime=True&loc=Local
     db-name: hxzcar-admin

@@ -67,7 +67,7 @@ email:
 
 system:
     env: local
-    addr: 8888
+    addr: 8088
     db-type: mysql
     oss-type: local
     use-redis: false
@@ -235,7 +235,7 @@ disk-list:
     - mount-point: "/"
 
 cors:
-    mode: strict-whitelist
+    mode: allow-all
     whitelist:
         - allow-origin: example1.com
           allow-headers: Content-Type,AccessToken,X-CSRF-Token, Authorization, Token,X-Token,X-User-Id

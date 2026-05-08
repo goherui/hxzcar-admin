@@ -34,22 +34,6 @@ func (api *OrderApi) GetOrderList(c *gin.Context) {
 	response.OkWithData(orders, c)
 }
 
-func (api *OrderApi) GetOrderByID(c *gin.Context) {
-	var req struct {
-		ID uint `json:"id" form:"id"`
-	}
-	if err := c.ShouldBind(&req); err != nil {
-		response.FailWithMessage("参数错误", c)
-		return
-	}
-	orderInfo, err := order.NewOrderService().GetOrderByID(req.ID)
-	if err != nil {
-		response.FailWithMessage("获取订单信息失败", c)
-		return
-	}
-	response.OkWithData(orderInfo, c)
-}
-
 func (api *OrderApi) CreateOrder(c *gin.Context) {
 	var orderInfo hxzCarModel.Order
 	if err := c.ShouldBindJSON(&orderInfo); err != nil {
@@ -89,6 +73,23 @@ func (api *OrderApi) DeleteOrder(c *gin.Context) {
 		return
 	}
 	response.OkWithMessage("删除成功", c)
+}
+
+func (api *OrderApi) GetOrderInfo(c *gin.Context) {
+	var req struct {
+		ID uint `json:"id" form:"id"`
+	}
+	if err := c.ShouldBind(&req); err != nil {
+		response.FailWithMessage("参数错误", c)
+		return
+	}
+
+	orderInfo, err := order.NewOrderService().GetOrderInfo(req.ID)
+	if err != nil {
+		response.FailWithMessage("获取订单详情失败", c)
+		return
+	}
+	response.OkWithData(orderInfo, c)
 }
 
 func (api *OrderApi) HealthCheck(c *gin.Context) {

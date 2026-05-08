@@ -24,7 +24,7 @@ func InitHxzCarRouter(Router *gin.RouterGroup) {
 		{
 			orderApi := hxzCar.OrderApi{}
 			OrderRouter.GET("list", orderApi.GetOrderList)
-			OrderRouter.GET("info", orderApi.GetOrderByID)
+			OrderRouter.GET("info", orderApi.GetOrderInfo)
 			OrderRouter.POST("create", orderApi.CreateOrder)
 			OrderRouter.PUT("update", orderApi.UpdateOrder)
 			OrderRouter.DELETE("delete", orderApi.DeleteOrder)

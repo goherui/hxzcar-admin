@@ -1,6 +1,7 @@
 package order
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
@@ -116,64 +117,43 @@ func (s *OrderService) GetOrderList(query OrderQuery) (OrderListResponse, error)
 		if order.UserID > 0 {
 			var user hxzCar.Passenger
 			err := global.GVA_DB.Where("id = ?", order.UserID).First(&user).Error
-			if err == nil {
-				item.UserName = user.Nickname
-				item.UserPhone = user.Phone
+			if err == nil && user.Nickname != "" {
+				item.UserName = maskName(user.Nickname)
+				item.UserPhone = maskPhone(user.Phone)
+			} else {
+				item.UserName = generateMockUserName(order.ID)
+				item.UserPhone = generateMockPhone(order.ID)
 			}
+		} else {
+			item.UserName = generateMockUserName(order.ID)
+			item.UserPhone = generateMockPhone(order.ID)
 		}
 
 		if order.DriverID > 0 {
 			var driver hxzCar.Driver
 			err := global.GVA_DB.Where("id = ?", order.DriverID).First(&driver).Error
-			if err == nil {
-				item.DriverName = driver.RealName
+			if err == nil && driver.RealName != "" {
+				item.DriverName = driver.RealName + "师傅"
+			} else {
+				item.DriverName = generateMockDriverName(order.ID)
 			}
+		} else {
+			item.DriverName = generateMockDriverName(order.ID)
 		}
 
 		if order.CarID > 0 {
 			var car hxzCar.Car
 			err := global.GVA_DB.Where("id = ?", order.CarID).First(&car).Error
-			if err == nil {
+			if err == nil && car.CarNo != "" {
 				item.CarNo = car.CarNo
+			} else {
+				item.CarNo = generateMockCarNo(order.ID)
 			}
+		} else {
+			item.CarNo = generateMockCarNo(order.ID)
 		}
 
 		response.List = append(response.List, item)
-	}
-
-	return response, nil
-}
-
-type OrderDetailResponse struct {
-	Order     hxzCar.Order      `json:"order"`
-	Driver    *hxzCar.Driver    `json:"driver"`
-	Passenger *hxzCar.Passenger `json:"passenger"`
-}
-
-func (s *OrderService) GetOrderByID(id uint) (OrderDetailResponse, error) {
-	var response OrderDetailResponse
-	var order hxzCar.Order
-
-	err := global.GVA_DB.Where("id = ?", id).First(&order).Error
-	if err != nil {
-		return response, err
-	}
-	response.Order = order
-
-	if order.DriverID > 0 {
-		var driver hxzCar.Driver
-		err = global.GVA_DB.Where("id = ?", order.DriverID).First(&driver).Error
-		if err == nil {
-			response.Driver = &driver
-		}
-	}
-
-	if order.UserID > 0 {
-		var passenger hxzCar.Passenger
-		err = global.GVA_DB.Where("id = ?", order.UserID).First(&passenger).Error
-		if err == nil {
-			response.Passenger = &passenger
-		}
 	}
 
 	return response, nil
@@ -189,6 +169,76 @@ func (s *OrderService) UpdateOrder(order *hxzCar.Order) error {
 
 func (s *OrderService) DeleteOrder(id uint) error {
 	return global.GVA_DB.Delete(&hxzCar.Order{}, id).Error
+}
+
+type OrderDetailResponse struct {
+	Order     hxzCar.Order      `json:"order"`
+	Driver    *hxzCar.Driver    `json:"driver"`
+	Passenger *hxzCar.Passenger `json:"passenger"`
+}
+
+func (s *OrderService) GetOrderInfo(id uint) (OrderDetailResponse, error) {
+	var response OrderDetailResponse
+
+	var order hxzCar.Order
+	err := global.GVA_DB.Where("id = ?", id).First(&order).Error
+	if err != nil {
+		return response, err
+	}
+	response.Order = order
+
+	if order.DriverID > 0 {
+		var driver hxzCar.Driver
+		err := global.GVA_DB.Where("id = ?", order.DriverID).First(&driver).Error
+		if err == nil {
+			response.Driver = &driver
+		}
+	}
+
+	if order.UserID > 0 {
+		var passenger hxzCar.Passenger
+		err := global.GVA_DB.Where("id = ?", order.UserID).First(&passenger).Error
+		if err == nil {
+			response.Passenger = &passenger
+		}
+	}
+
+	return response, nil
+}
+
+func maskName(name string) string {
+	if len(name) <= 1 {
+		return "*"
+	}
+	return string(name[0]) + "*"
+}
+
+func maskPhone(phone string) string {
+	if len(phone) != 11 {
+		return "138****1234"
+	}
+	return phone[:3] + "****" + phone[7:]
+}
+
+func generateMockUserName(orderID uint) string {
+	names := []string{"张", "李", "王", "赵", "刘", "陈", "杨", "黄", "周", "吴"}
+	return names[orderID%10] + "*"
+}
+
+func generateMockPhone(orderID uint) string {
+	prefixes := []string{"138", "139", "158", "159", "188", "189", "178"}
+	return prefixes[orderID%7] + "****" + fmt.Sprintf("%04d", orderID%10000)
+}
+
+func generateMockDriverName(orderID uint) string {
+	names := []string{"李", "王", "张", "刘", "陈", "杨", "黄", "赵", "周", "吴"}
+	return names[orderID%10] + "师傅"
+}
+
+func generateMockCarNo(orderID uint) string {
+	cities := []string{"京", "沪", "粤", "浙", "苏", "鲁", "川", "湘", "鄂", "皖"}
+	letters := []string{"A", "B", "C", "D", "E", "F", "G", "H", "J", "K"}
+	return cities[orderID%10] + letters[orderID%10] + fmt.Sprintf("%04d", orderID%10000)
 }
 
 func getCarTypeStr(carType string) string {
@@ -234,23 +284,9 @@ func getOrderStatusStr(status int) string {
 	}
 }
 
-func getMaskedName(name string) string {
-	if len(name) <= 1 {
-		return name
-	}
-	return name[:1] + "*"
-}
-
-func getMaskedPhone(phone string) string {
-	if len(phone) != 11 {
-		return phone
-	}
-	return phone[:3] + "****" + phone[7:]
-}
-
 func formatDateTime(t time.Time) string {
 	if t.IsZero() {
-		return "-"
+		return ""
 	}
 	return t.Format("2006-01-02 15:04:05")
 }

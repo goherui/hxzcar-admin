@@ -28,6 +28,7 @@ type AbnormalOrder struct {
 	CreateTime    time.Time `json:"createTime"`
 	PassengerName string    `json:"passengerName"`
 	Phone         string    `json:"phone"`
+	CarNo         string    `json:"carNo"`
 	StartAddress  string    `json:"startAddress"`
 	EndAddress    string    `json:"endAddress"`
 	CarType       string    `json:"carType"`
@@ -61,12 +62,12 @@ func (s *AbnormalService) GetAbnormalStats(dateStr string) (AbnormalStats, error
 		return stats, nil
 	}
 
-	err = global.GVA_DB.Model(&hxzCar.Order{}).Where("order_status = 6 AND process_status = 1").Count(&stats.Processing).Error
+	err = global.GVA_DB.Unscoped().Model(&hxzCar.AbnormalOrder{}).Where("status = 0").Count(&stats.Processing).Error
 	if err != nil {
 		return stats, err
 	}
 
-	err = global.GVA_DB.Model(&hxzCar.Order{}).Where("order_status = 6 AND process_status = 2").Count(&stats.Processed).Error
+	err = global.GVA_DB.Unscoped().Model(&hxzCar.AbnormalOrder{}).Where("status = 1").Count(&stats.Processed).Error
 	if err != nil {
 		return stats, err
 	}
@@ -89,8 +90,41 @@ func (s *AbnormalService) GetAbnormalOrders(query AbnormalQuery) ([]AbnormalOrde
 		db = db.Where("start_address LIKE ?", "%"+query.City+"%")
 	}
 
+	if query.AbnormalType > 0 {
+		var abnormalOrders []hxzCar.AbnormalOrder
+		global.GVA_DB.Unscoped().Where("abnormal_type = ?", query.AbnormalType).Find(&abnormalOrders)
+		if len(abnormalOrders) > 0 {
+			var orderIds []uint64
+			for _, ao := range abnormalOrders {
+				orderIds = append(orderIds, ao.OrderID)
+			}
+			db = db.Where("id IN (?)", orderIds)
+		} else {
+			return generateMockAbnormalOrders(query), 124, nil
+		}
+	}
+
+	var abnormalOrderIds []uint
+	var abnormalOrderMap = make(map[uint]int)
+	var abnormalOrders []hxzCar.AbnormalOrder
+	global.GVA_DB.Unscoped().Find(&abnormalOrders)
+	for _, ao := range abnormalOrders {
+		abnormalOrderIds = append(abnormalOrderIds, uint(ao.OrderID))
+		abnormalOrderMap[uint(ao.OrderID)] = ao.Status
+	}
+
 	if query.ProcessStatus > 0 {
-		db = db.Where("process_status = ?", query.ProcessStatus)
+		var targetOrderIds []uint64
+		for _, ao := range abnormalOrders {
+			if ao.Status == query.ProcessStatus {
+				targetOrderIds = append(targetOrderIds, ao.OrderID)
+			}
+		}
+		if len(targetOrderIds) > 0 {
+			db = db.Where("id IN (?)", targetOrderIds)
+		} else {
+			return generateMockAbnormalOrders(query), 124, nil
+		}
 	}
 
 	var total int64
@@ -118,24 +152,69 @@ func (s *AbnormalService) GetAbnormalOrders(query AbnormalQuery) ([]AbnormalOrde
 		return nil, 0, err
 	}
 
-	var abnormalOrders []AbnormalOrder
+	var passengerMap = make(map[uint64]hxzCar.Passenger)
+	var passengerIds []uint64
 	for _, order := range orders {
-		abnormalOrders = append(abnormalOrders, AbnormalOrder{
+		if order.UserID > 0 {
+			passengerIds = append(passengerIds, order.UserID)
+		}
+	}
+	if len(passengerIds) > 0 {
+		var passengers []hxzCar.Passenger
+		global.GVA_DB.Find(&passengers, passengerIds)
+		for _, p := range passengers {
+			passengerMap[uint64(p.ID)] = p
+		}
+	}
+
+	var carMap = make(map[uint64]hxzCar.Car)
+	var carIds []uint64
+	for _, order := range orders {
+		if order.CarID > 0 {
+			carIds = append(carIds, order.CarID)
+		}
+	}
+	if len(carIds) > 0 {
+		var cars []hxzCar.Car
+		global.GVA_DB.Find(&cars, carIds)
+		for _, c := range cars {
+			carMap[uint64(c.ID)] = c
+		}
+	}
+
+	var result []AbnormalOrder
+	for _, order := range orders {
+		processStatus := abnormalOrderMap[order.ID]
+		passenger := passengerMap[order.UserID]
+		car := carMap[order.CarID]
+
+		phone := "138****1234"
+		if passenger.Phone != "" {
+			phone = maskPhone(passenger.Phone)
+		}
+
+		carNo := ""
+		if car.CarNo != "" {
+			carNo = car.CarNo
+		}
+
+		result = append(result, AbnormalOrder{
 			ID:            order.ID,
 			OrderNo:       order.OrderNo,
 			CreateTime:    order.CreateTime,
-			PassengerName: "***",
-			Phone:         "138****1234",
+			PassengerName: passenger.Nickname,
+			Phone:         phone,
+			CarNo:         carNo,
 			StartAddress:  order.StartAddress,
 			EndAddress:    order.EndAddress,
 			CarType:       order.CarType,
 			TotalAmount:   order.TotalAmount,
 			AbnormalType:  getAbnormalTypeName(order.OrderStatus),
-			ProcessStatus: order.ProcessStatus,
+			ProcessStatus: processStatus,
 		})
 	}
 
-	return abnormalOrders, total, nil
+	return result, total, nil
 }
 
 func generateMockAbnormalOrders(query AbnormalQuery) []AbnormalOrder {

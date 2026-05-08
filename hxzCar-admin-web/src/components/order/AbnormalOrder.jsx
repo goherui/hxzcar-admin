@@ -132,11 +132,12 @@ function AbnormalOrder() {
   }
 
   const columns = [
-    { title: '订单号', dataIndex: 'orderNo', key: 'orderNo', ellipsis: true },
+    { title: '订单号', dataIndex: 'orderNo', key: 'orderNo', ellipsis: true, width: 140 },
     { 
       title: '下单时间', 
       dataIndex: 'createTime', 
       key: 'createTime',
+      width: 160,
       render: (text) => {
         if (typeof text === 'string') {
           if (text.includes('T')) {
@@ -146,36 +147,38 @@ function AbnormalOrder() {
         return text
       },
     },
-    { title: '乘客', dataIndex: 'passengerName', key: 'passengerName' },
-    { title: '手机号', dataIndex: 'phone', key: 'phone' },
-    { title: '出发地', dataIndex: 'startAddress', key: 'startAddress', ellipsis: true },
-    { title: '目的地', dataIndex: 'endAddress', key: 'endAddress', ellipsis: true },
-    { title: '订单类型', dataIndex: 'carType', key: 'carType' },
+    { title: '出发地', dataIndex: 'startAddress', key: 'startAddress', ellipsis: true, width: 150 },
+    { title: '目的地', dataIndex: 'endAddress', key: 'endAddress', ellipsis: true, width: 150 },
+    { title: '订单类型', dataIndex: 'carType', key: 'carType', width: 80 },
     { 
       title: '订单金额', 
       dataIndex: 'totalAmount', 
       key: 'totalAmount',
-      render: (text) => `¥${text}`,
+      width: 80,
+      render: (text) => <span style={{ fontWeight: 500 }}>¥{(text || 0).toFixed(2)}</span>,
     },
     {
       title: '异常类型',
       dataIndex: 'abnormalType',
       key: 'abnormalType',
-      render: (type) => <Tag color="orange">{type}</Tag>,
+      width: 80,
+      render: (type) => <Tag color="orange" style={{ fontSize: 11 }}>{type}</Tag>,
     },
     {
       title: '处理状态',
       dataIndex: 'processStatus',
       key: 'processStatus',
+      width: 80,
       render: (status) => {
-        return <Tag color={getStatusColor(status)}>{getStatusText(status)}</Tag>
+        return <Tag color={getStatusColor(status)} style={{ fontSize: 11 }}>{getStatusText(status)}</Tag>
       },
     },
     {
       title: '操作',
       key: 'action',
+      width: 100,
       render: (_, record) => (
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 4 }}>
           <Button type="link" size="small" onClick={() => navigate(`/order-detail/${record.id}`)}>详情</Button>
           {record.processStatus !== 2 && (
             <Button type="link" size="small" onClick={() => handleProcess(record.id)}>处理</Button>
@@ -206,9 +209,9 @@ function AbnormalOrder() {
 
       <div className="filter-bar" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: 16, background: '#fff', borderRadius: 8, marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12, color: '#666' }}>订单号/手机号/车牌号</span>
+          <span style={{ fontSize: 12, color: '#666' }}>订单号</span>
           <Input 
-            placeholder="请输入关键词" 
+            placeholder="请输入订单号" 
             style={{ width: 200 }}
             value={filters.keyword}
             onChange={(e) => setFilters({ ...filters, keyword: e.target.value })}

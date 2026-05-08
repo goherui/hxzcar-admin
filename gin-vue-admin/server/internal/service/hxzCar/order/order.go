@@ -94,7 +94,7 @@ func (s *OrderService) GetOrderList(query OrderQuery) (OrderListResponse, error)
 	}
 
 	offset := (query.Page - 1) * query.PageSize
-	err = db.Offset(offset).Limit(query.PageSize).Find(&orders).Error
+	err = db.Order("create_time DESC").Offset(offset).Limit(query.PageSize).Find(&orders).Error
 	if err != nil {
 		return response, err
 	}
@@ -120,13 +120,7 @@ func (s *OrderService) GetOrderList(query OrderQuery) (OrderListResponse, error)
 			if err == nil && user.Nickname != "" {
 				item.UserName = maskName(user.Nickname)
 				item.UserPhone = maskPhone(user.Phone)
-			} else {
-				item.UserName = generateMockUserName(order.ID)
-				item.UserPhone = generateMockPhone(order.ID)
 			}
-		} else {
-			item.UserName = generateMockUserName(order.ID)
-			item.UserPhone = generateMockPhone(order.ID)
 		}
 
 		if order.DriverID > 0 {
@@ -134,11 +128,7 @@ func (s *OrderService) GetOrderList(query OrderQuery) (OrderListResponse, error)
 			err := global.GVA_DB.Where("id = ?", order.DriverID).First(&driver).Error
 			if err == nil && driver.RealName != "" {
 				item.DriverName = driver.RealName + "师傅"
-			} else {
-				item.DriverName = generateMockDriverName(order.ID)
 			}
-		} else {
-			item.DriverName = generateMockDriverName(order.ID)
 		}
 
 		if order.CarID > 0 {
@@ -146,11 +136,7 @@ func (s *OrderService) GetOrderList(query OrderQuery) (OrderListResponse, error)
 			err := global.GVA_DB.Where("id = ?", order.CarID).First(&car).Error
 			if err == nil && car.CarNo != "" {
 				item.CarNo = car.CarNo
-			} else {
-				item.CarNo = generateMockCarNo(order.ID)
 			}
-		} else {
-			item.CarNo = generateMockCarNo(order.ID)
 		}
 
 		response.List = append(response.List, item)
@@ -190,20 +176,68 @@ func (s *OrderService) GetOrderInfo(id uint) (OrderDetailResponse, error) {
 	if order.DriverID > 0 {
 		var driver hxzCar.Driver
 		err := global.GVA_DB.Where("id = ?", order.DriverID).First(&driver).Error
-		if err == nil {
+		if err == nil && driver.RealName != "" {
 			response.Driver = &driver
+		} else {
+			zap.L().Warn("driver not found", zap.Uint64("driver_id", order.DriverID), zap.Error(err))
 		}
 	}
 
 	if order.UserID > 0 {
 		var passenger hxzCar.Passenger
 		err := global.GVA_DB.Where("id = ?", order.UserID).First(&passenger).Error
-		if err == nil {
+		if err == nil && passenger.Nickname != "" {
 			response.Passenger = &passenger
+		} else {
+			zap.L().Warn("passenger not found", zap.Uint64("user_id", order.UserID), zap.Error(err))
 		}
 	}
 
 	return response, nil
+}
+
+func generateMockDriver(driverID uint64) *hxzCar.Driver {
+	names := []string{"王", "李", "张", "刘", "陈", "杨", "黄", "赵", "周", "吴", "徐", "孙", "马", "朱", "胡", "郭", "何", "林"}
+	cities := []string{"北京", "上海", "广州", "深圳", "成都", "杭州", "南京", "武汉", "西安", "重庆"}
+
+	return &hxzCar.Driver{
+		ID:              uint(driverID),
+		Phone:           generateMockPhone(uint(driverID)),
+		RealName:        names[driverID%uint64(len(names))] + "师傅",
+		IDCard:          fmt.Sprintf("1101011990%04d%04d", driverID%10000, driverID%10000),
+		Gender:          int(driverID % 3),
+		Age:             25 + int(driverID%20),
+		City:            cities[driverID%uint64(len(cities))],
+		LicenseNo:       fmt.Sprintf("C12020%06d", driverID),
+		DriverType:      int(driverID%2) + 1,
+		AuditStatus:     1,
+		WorkStatus:      int(driverID % 3),
+		TotalOrderCount: 100 + int(driverID%500),
+		TotalIncome:     float64(3000 + int(driverID%10000)),
+		AverageRating:   4.5 + float64(driverID%10)*0.1,
+		Status:          1,
+		RegisterTime:    time.Now().AddDate(-int(driverID%3), 0, 0),
+		LastOnlineTime:  time.Now().Add(-time.Duration(driverID%60) * time.Minute),
+	}
+}
+
+func generateMockPassenger(userID uint64) *hxzCar.Passenger {
+	names := []string{"小明", "小红", "小刚", "小丽", "小强", "小芳", "小华", "小雪", "小磊", "小婷", "小杰", "小琳", "小涛", "小娜", "小峰", "小燕", "小龙", "小敏"}
+	cities := []string{"北京", "上海", "广州", "深圳", "成都", "杭州", "南京", "武汉", "西安", "重庆"}
+
+	return &hxzCar.Passenger{
+		ID:              uint(userID),
+		Phone:           generateMockPhone(uint(userID)),
+		Nickname:        names[userID%uint64(len(names))],
+		Gender:          int(userID % 3),
+		Age:             18 + int(userID%30),
+		City:            cities[userID%uint64(len(cities))],
+		RegisterTime:    time.Now().AddDate(-int(userID%2), -int(userID%12), 0),
+		LastOrderTime:   time.Now().Add(-time.Duration(userID%7) * 24 * time.Hour),
+		TotalOrderCount: 5 + int(userID%50),
+		TotalConsume:    float64(100 + int(userID%2000)),
+		Status:          1,
+	}
 }
 
 func maskName(name string) string {

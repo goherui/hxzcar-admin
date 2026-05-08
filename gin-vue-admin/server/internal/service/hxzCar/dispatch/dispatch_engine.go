@@ -453,6 +453,50 @@ func (e *DispatchEngine) saveDispatchLog(order *OrderInfo, driver *DriverCandida
 	e.logChan <- log
 }
 
+func (e *DispatchEngine) ManualDispatch(orderID, driverID uint64) error {
+	var order hxzCar.Order
+	err := e.db.Where("id = ?", orderID).First(&order).Error
+	if err != nil {
+		return fmt.Errorf("订单不存在")
+	}
+
+	var driver hxzCar.Driver
+	err = e.db.Where("id = ?", driverID).First(&driver).Error
+	if err != nil {
+		return fmt.Errorf("司机不存在")
+	}
+
+	err = e.db.Model(&hxzCar.Order{}).Where("id = ?", orderID).Updates(map[string]interface{}{
+		"driver_id":    driverID,
+		"order_status": 2,
+	}).Error
+	if err != nil {
+		return fmt.Errorf("更新订单失败: %v", err)
+	}
+
+	log := &hxzCar.OrderDispatchLog{
+		OrderID:      orderID,
+		OrderNo:      order.OrderNo,
+		DriverID:     driverID,
+		DriverName:   driver.RealName,
+		StartLat:     order.StartLat,
+		StartLng:     order.StartLng,
+		Distance:     0,
+		ServiceScore: driver.AverageRating,
+		AcceptRate:   0,
+		Score:        0,
+		Status:       DispatchStatusSuccess,
+		Result:       DispatchResultSuccess,
+		ResultMsg:    "手动派单成功",
+		DispatchTime: time.Now(),
+		RuleName:     "手动派单",
+	}
+
+	e.logChan <- log
+
+	return nil
+}
+
 func (e *DispatchEngine) startLogConsumer() {
 	for log := range e.logChan {
 		if log.Status == DispatchStatusPending {

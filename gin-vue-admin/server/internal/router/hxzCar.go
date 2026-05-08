@@ -68,6 +68,7 @@ func InitHxzCarRouter(Router *gin.RouterGroup) {
 		DispatchRouter := HxzCarRouter.Group("dispatch")
 		{
 			DispatchRouter.POST("order", hxzCar.DispatchOrder)
+			DispatchRouter.POST("manual", hxzCar.ManualDispatchOrder)
 			DispatchRouter.POST("location", hxzCar.ReportDriverLocation)
 			DispatchRouter.GET("online", hxzCar.SetDriverOnline)
 			DispatchRouter.GET("offline", hxzCar.SetDriverOffline)

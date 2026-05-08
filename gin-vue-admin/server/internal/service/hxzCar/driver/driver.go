@@ -11,9 +11,10 @@ func NewDriverService() *DriverService {
 	return &DriverService{}
 }
 
-func (s *DriverService) GetDriverList() ([]hxzCar.Driver, error) {
+func (s *DriverService) GetDriverList(page, pageSize int) ([]hxzCar.Driver, error) {
 	var drivers []hxzCar.Driver
-	err := global.GVA_DB.Find(&drivers).Error
+	offset := (page - 1) * pageSize
+	err := global.GVA_DB.Preload("Car").Offset(offset).Limit(pageSize).Find(&drivers).Error
 	return drivers, err
 }
 

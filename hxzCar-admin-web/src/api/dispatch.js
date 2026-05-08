@@ -8,6 +8,14 @@ export function dispatchOrder(data) {
   })
 }
 
+export function manualDispatchOrder(data) {
+  return request({
+    url: '/hxzCar/dispatch/manual',
+    method: 'post',
+    data
+  })
+}
+
 export function reportLocation(data) {
   return request({
     url: '/hxzCar/dispatch/location',

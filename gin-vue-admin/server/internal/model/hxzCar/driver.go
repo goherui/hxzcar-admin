@@ -25,6 +25,7 @@ type Driver struct {
 	Status           int       `gorm:"column:status;default:1;comment:状态 0-禁用 1-正常" json:"status"`
 	RegisterTime     time.Time `gorm:"column:register_time;comment:注册时间" json:"registerTime"`
 	LastOnlineTime   time.Time `gorm:"column:last_online_time;comment:最后在线时间" json:"lastOnlineTime"`
+	Car              Car       `gorm:"foreignKey:DriverID"`
 }
 
 func (Driver) TableName() string {

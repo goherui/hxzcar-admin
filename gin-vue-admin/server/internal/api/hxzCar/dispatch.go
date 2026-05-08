@@ -71,6 +71,11 @@ type DispatchRequest struct {
 	RegionCode string  `json:"regionCode" default:"default"`
 }
 
+type ManualDispatchRequest struct {
+	OrderID  uint64 `json:"orderId" binding:"required"`
+	DriverID uint64 `json:"driverId" binding:"required"`
+}
+
 func DispatchOrder(c *gin.Context) {
 	var req DispatchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -106,6 +111,26 @@ func DispatchOrder(c *gin.Context) {
 			"distance":     driver.Distance,
 			"score":        driver.Score,
 		},
+	})
+}
+
+func ManualDispatchOrder(c *gin.Context) {
+	var req ManualDispatchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"code": 400, "msg": "参数错误", "data": nil})
+		return
+	}
+
+	err := getDispatchEngine().ManualDispatch(req.OrderID, req.DriverID)
+	if err != nil {
+		c.JSON(500, gin.H{"code": 500, "msg": fmt.Sprintf("手动派单失败: %v", err), "data": nil})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"code": 200,
+		"msg":  "手动派单成功",
+		"data": nil,
 	})
 }
 

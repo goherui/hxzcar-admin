@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Button, Select, DatePicker, Input, Tag, Timeline, Card, Row, Col, Avatar } from 'antd'
+import { Button, Select, DatePicker, Input, Tag, Timeline, Card, Row, Col, Avatar, Modal, Checkbox } from 'antd'
 import { LeftOutlined, PhoneOutlined, ReloadOutlined, PlusOutlined, MinusOutlined, CheckCircleFilled, EnvironmentFilled, CarFilled, StarFilled } from '@ant-design/icons'
 import { getOrderList, getOrderInfo } from '@/api/hxzCar'
-import { dispatchOrder, toggleDispatch, getDispatchStatus, batchDispatch } from '@/api/dispatch'
+import { dispatchOrder, manualDispatchOrder, toggleDispatch, getDispatchStatus, batchDispatch } from '@/api/dispatch'
+import { getDriverList } from '@/api/hxzCar'
 
 const { Option } = Select
 const { RangePicker } = DatePicker
@@ -30,6 +31,9 @@ export default function OrderDispatch() {
   })
   const [dispatchEnabled, setDispatchEnabled] = useState(false)
   const [dispatchInterval, setDispatchInterval] = useState(null)
+  const [showDriverModal, setShowDriverModal] = useState(false)
+  const [drivers, setDrivers] = useState([])
+  const [selectedDriver, setSelectedDriver] = useState(null)
 
   const statusOptions = [
     { value: '全部', label: '全部' },
@@ -235,6 +239,64 @@ export default function OrderDispatch() {
     }
   }
 
+  const handleAssignDriver = async () => {
+    if (!selectedOrder || selectedOrder.orderStatus !== 1) {
+      alert('请选择一个待接单的订单')
+      return
+    }
+
+    try {
+      console.log('开始获取司机列表...')
+      const res = await getDriverList({ page: 1, pageSize: 50 })
+      console.log('司机列表响应:', res)
+      if (res && (res.code === 200 || res.code === 0)) {
+        if (res.data && res.data.list) {
+          setDrivers(res.data.list)
+          setSelectedDriver(null)
+          setShowDriverModal(true)
+          console.log('司机列表加载成功，共', res.data.list.length, '条')
+        } else {
+          console.error('司机列表数据为空:', res.data)
+          alert('获取司机列表失败：数据格式不正确')
+        }
+      } else {
+        console.error('司机列表接口返回失败:', res)
+        alert(`获取司机列表失败：${res?.msg || '未知错误'}`)
+      }
+    } catch (error) {
+      console.error('获取司机列表失败:', error)
+      console.error('错误详情:', error.response || error.message)
+      alert('获取司机列表失败，请稍后重试')
+    }
+  }
+
+  const handleConfirmAssign = async () => {
+    if (!selectedDriver) {
+      alert('请选择一个司机')
+      return
+    }
+
+    try {
+      console.log('开始分配司机...')
+      console.log('订单ID:', selectedOrder.id)
+      console.log('司机ID:', selectedDriver.id)
+      const res = await manualDispatchOrder({ orderId: selectedOrder.id, driverId: selectedDriver.id })
+      console.log('派单响应:', res)
+      if (res && (res.code === 200 || res.code === 0)) {
+        alert('手动分配司机成功！')
+        setShowDriverModal(false)
+        fetchOrders()
+      } else {
+        console.error('派单失败:', res)
+        alert(`分配失败: ${res?.msg || '未知错误'}`)
+      }
+    } catch (error) {
+      console.error('分配司机失败:', error)
+      console.error('错误详情:', error.response || error.message)
+      alert('分配司机失败，请稍后重试')
+    }
+  }
+
   return (
     <div style={{ padding: '20px', background: '#f5f7fa', minHeight: '100vh' }}>
       {/* 顶部筛选栏 */}
@@ -328,9 +390,19 @@ export default function OrderDispatch() {
           <Card style={{ ...cardStyle, ...mainCardHeight }} bodyStyle={{ padding: '20px', overflowY: 'auto' }}>
             {/* 订单基本信息 */}
             <div style={{ marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                <span style={{ fontSize: '16px', fontWeight: 600, color: '#333' }}>订单号 {selectedOrder?.orderNo || 'DD20260508103232ed9ba57d'}</span>
-                <Tag color="processing">进行中</Tag>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '16px', fontWeight: 600, color: '#333' }}>订单号 {selectedOrder?.orderNo || 'DD20260508103232ed9ba57d'}</span>
+                  {getStatusTag(selectedOrder?.orderStatus || 1)}
+                </div>
+                <Button 
+                  type="primary" 
+                  style={{ background: '#1890ff', borderColor: '#1890ff' }}
+                  onClick={handleAssignDriver}
+                  disabled={!selectedOrder || selectedOrder.orderStatus !== 1}
+                >
+                  手动分配司机
+                </Button>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
                 <div>
@@ -553,6 +625,66 @@ export default function OrderDispatch() {
           </Card>
         </Col>
       </Row>
+
+      {/* 司机选择弹窗 */}
+      <Modal
+        title="选择司机"
+        visible={showDriverModal}
+        onCancel={() => setShowDriverModal(false)}
+        footer={[
+          <Button key="back" onClick={() => setShowDriverModal(false)}>取消</Button>,
+          <Button key="submit" type="primary" onClick={handleConfirmAssign}>
+            确认分配
+          </Button>
+        ]}
+        width={700}
+      >
+        <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+          {drivers.map(driver => (
+            <div
+              key={driver.id}
+              onClick={() => setSelectedDriver(driver)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '12px 16px',
+                borderBottom: '1px solid #f0f0f0',
+                cursor: 'pointer',
+                background: selectedDriver?.id === driver.id ? '#f0f5ff' : '#fff'
+              }}
+            >
+              <Checkbox
+                checked={selectedDriver?.id === driver.id}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setSelectedDriver(driver)
+                  } else {
+                    setSelectedDriver(null)
+                  }
+                }}
+                style={{ marginRight: '12px' }}
+              />
+              <Avatar size={40} icon={<CarFilled />} style={{ background: '#52c41a', marginRight: '12px' }} />
+              <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontWeight: 500, fontSize: '14px', color: '#333' }}>{driver.realName || '未知'}</span>
+                    <Tag color={driver.workStatus === 1 ? 'success' : 'default'} style={{ fontSize: '10px' }}>
+                      {driver.workStatus === 1 ? '在线' : driver.workStatus === 2 ? '行程中' : '离线'}
+                    </Tag>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '4px' }}>
+                    <span style={{ fontSize: '12px', color: '#666' }}>手机号: {driver.phone || '未填写'}</span>
+                    <span style={{ fontSize: '12px', color: '#666' }}>车牌号: {driver.car?.carNo || '未填写'}</span>
+                    <span style={{ fontSize: '12px', color: '#666' }}>评分: {driver.averageRating || 0}</span>
+                  </div>
+                </div>
+            </div>
+          ))}
+          {drivers.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>暂无可用司机</div>
+          )}
+        </div>
+      </Modal>
 
       {/* 页脚 */}
       <div style={{ textAlign: 'center', padding: '20px', color: '#999', fontSize: '12px' }}>

@@ -1,10 +1,12 @@
 package hxzCar
 
 import (
-	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
-	hxzCarModel "github.com/flipped-aurora/gin-vue-admin/server/internal/model/hxzCar"
-	hxzCarService "github.com/flipped-aurora/gin-vue-admin/server/internal/service/hxzCar"
 	"net/http"
+
+	"github.com/flipped-aurora/gin-vue-admin/server/global"
+	hxzCar "github.com/flipped-aurora/gin-vue-admin/server/internal/model/hxzCar"
+	hxzCarService "github.com/flipped-aurora/gin-vue-admin/server/internal/service/hxzCar"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,12 +14,39 @@ import (
 type DriverApi struct{}
 
 func (api *DriverApi) GetDriverList(c *gin.Context) {
-	drivers, err := hxzCarService.DriverService.GetDriverList()
+	var req struct {
+		Page     int `form:"page" json:"page"`
+		PageSize int `form:"pageSize" json:"pageSize"`
+	}
+	if err := c.ShouldBind(&req); err != nil {
+		response.FailWithMessage("参数错误", c)
+		return
+	}
+
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 20
+	}
+
+	drivers, err := hxzCarService.DriverService.GetDriverList(req.Page, req.PageSize)
 	if err != nil {
 		response.FailWithMessage("获取司机列表失败", c)
 		return
 	}
-	response.OkWithData(drivers, c)
+
+	var total int64
+	err = global.GVA_DB.Model(&hxzCar.Driver{}).Count(&total).Error
+	if err != nil {
+		response.FailWithMessage("获取司机列表失败", c)
+		return
+	}
+
+	response.OkWithData(gin.H{
+		"list":  drivers,
+		"total": total,
+	}, c)
 }
 
 func (api *DriverApi) GetDriverByID(c *gin.Context) {
@@ -37,7 +66,7 @@ func (api *DriverApi) GetDriverByID(c *gin.Context) {
 }
 
 func (api *DriverApi) CreateDriver(c *gin.Context) {
-	var driver hxzCarModel.Driver
+	var driver hxzCar.Driver
 	if err := c.ShouldBindJSON(&driver); err != nil {
 		response.FailWithMessage("参数错误", c)
 		return
@@ -50,7 +79,7 @@ func (api *DriverApi) CreateDriver(c *gin.Context) {
 }
 
 func (api *DriverApi) UpdateDriver(c *gin.Context) {
-	var driver hxzCarModel.Driver
+	var driver hxzCar.Driver
 	if err := c.ShouldBindJSON(&driver); err != nil {
 		response.FailWithMessage("参数错误", c)
 		return

@@ -1,9 +1,10 @@
 import service from '@/utils/request'
 
-export const getDriverList = () => {
+export const getDriverList = (params) => {
   return service({
     url: '/hxzCar/driver/list',
-    method: 'get'
+    method: 'get',
+    params: params
   })
 }
 

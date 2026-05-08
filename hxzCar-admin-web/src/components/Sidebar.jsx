@@ -20,6 +20,7 @@ const menuItems = [
     children: [
       { key: 'order-list', label: '订单列表', path: '/order-list' },
       { key: 'order-monitor', label: '订单监控', path: '/order-monitor' },
+      { key: 'order-dispatch', label: '订单派送', path: '/order-dispatch' },
       { key: 'abnormal-order', label: '异常订单', path: '/abnormal-order' },
     ],
   },

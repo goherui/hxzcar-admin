@@ -7,6 +7,7 @@ import OrderDetail from './components/OrderDetail'
 import OrderList from './components/order/OrderList'
 import OrderMonitor from './components/order/OrderMonitor'
 import AbnormalOrder from './components/order/AbnormalOrder'
+import OrderDispatch from './components/order/OrderDispatch'
 import UserList from './components/user/UserList'
 import UserPortrait from './components/user/UserPortrait'
 import UserGroup from './components/user/UserGroup'
@@ -49,6 +50,7 @@ function App() {
                   <Route path="/order-list" element={<OrderList />} />
                   <Route path="/order-monitor" element={<OrderMonitor />} />
                   <Route path="/abnormal-order" element={<AbnormalOrder />} />
+                  <Route path="/order-dispatch" element={<OrderDispatch />} />
                   <Route path="/user-list" element={<UserList />} />
                   <Route path="/user-portrait" element={<UserPortrait />} />
                   <Route path="/user-group" element={<UserGroup />} />

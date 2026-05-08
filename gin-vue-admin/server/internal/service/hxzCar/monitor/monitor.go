@@ -23,7 +23,7 @@ type MonitorStats struct {
 }
 
 type LatestOrder struct {
-	ID           uint      `json:"id"`
+	ID           uint64    `json:"id"`
 	OrderNo      string    `json:"orderNo"`
 	CreateTime   time.Time `json:"createTime"`
 	CarType      string    `json:"carType"`

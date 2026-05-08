@@ -5,7 +5,7 @@ import (
 )
 
 type Order struct {
-	ID             uint      `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
+	ID             uint64    `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
 	OrderNo        string    `gorm:"column:order_no;unique;size:32;comment:订单编号" json:"orderNo"`
 	UserID         uint64    `gorm:"column:user_id;comment:用户ID" json:"userId"`
 	DriverID       uint64    `gorm:"column:driver_id;comment:司机ID" json:"driverId"`

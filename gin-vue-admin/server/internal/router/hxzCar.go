@@ -64,5 +64,17 @@ func InitHxzCarRouter(Router *gin.RouterGroup) {
 			AbnormalRouter.PUT("status", abnormalApi.UpdateProcessStatus)
 			AbnormalRouter.POST("batch", abnormalApi.BatchProcess)
 		}
+
+		DispatchRouter := HxzCarRouter.Group("dispatch")
+		{
+			DispatchRouter.POST("order", hxzCar.DispatchOrder)
+			DispatchRouter.POST("location", hxzCar.ReportDriverLocation)
+			DispatchRouter.GET("online", hxzCar.SetDriverOnline)
+			DispatchRouter.GET("offline", hxzCar.SetDriverOffline)
+			DispatchRouter.GET("driver/status", hxzCar.GetDriverStatus)
+			DispatchRouter.POST("toggle", hxzCar.ToggleDispatch)
+			DispatchRouter.GET("status", hxzCar.GetDispatchStatus)
+			DispatchRouter.POST("batch", hxzCar.BatchDispatch)
+		}
 	}
 }

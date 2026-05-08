@@ -3,7 +3,7 @@ import { message } from 'antd'
 
 const service = axios.create({
   baseURL: 'http://localhost:8088',
-  timeout: 5000
+  timeout: 60000
 })
 
 service.interceptors.request.use(

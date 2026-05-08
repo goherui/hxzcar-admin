@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button, Select, DatePicker, Input, Tag, Timeline, Card, Row, Col, Avatar } from 'antd'
 import { LeftOutlined, PhoneOutlined, ReloadOutlined, PlusOutlined, MinusOutlined, CheckCircleFilled, EnvironmentFilled, CarFilled, StarFilled } from '@ant-design/icons'
 import { getOrderList, getOrderInfo } from '@/api/hxzCar'
+import { dispatchOrder, toggleDispatch, getDispatchStatus, batchDispatch } from '@/api/dispatch'
 
 const { Option } = Select
 const { RangePicker } = DatePicker
@@ -27,6 +28,8 @@ export default function OrderDispatch() {
     orderNo: '',
     phone: ''
   })
+  const [dispatchEnabled, setDispatchEnabled] = useState(false)
+  const [dispatchInterval, setDispatchInterval] = useState(null)
 
   const statusOptions = [
     { value: '全部', label: '全部' },
@@ -86,6 +89,48 @@ export default function OrderDispatch() {
     }
   }, [selectedOrder])
 
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await getDispatchStatus()
+        if (res.code === 200) {
+          setDispatchEnabled(res.data.enabled)
+        }
+      } catch (error) {
+        console.error('获取派单状态失败:', error)
+      }
+    }
+    fetchStatus()
+  }, [])
+
+  useEffect(() => {
+    if (dispatchEnabled) {
+      const interval = setInterval(async () => {
+        try {
+          const res = await batchDispatch()
+          if (res.code === 200 && res.data.total > 0) {
+            fetchOrders()
+          }
+        } catch (error) {
+          console.error('自动派单轮询失败:', error)
+        }
+      }, 15000)
+
+      setDispatchInterval(interval)
+
+      return () => {
+        if (interval) {
+          clearInterval(interval)
+        }
+      }
+    } else {
+      if (dispatchInterval) {
+        clearInterval(dispatchInterval)
+        setDispatchInterval(null)
+      }
+    }
+  }, [dispatchEnabled])
+
   const fetchOrders = async () => {
     try {
       const params = {
@@ -139,6 +184,57 @@ export default function OrderDispatch() {
     setFilters({ status: '全部', timeRange: null, orderNo: '', phone: '' })
   }
 
+  const handleSmartDispatch = async () => {
+    if (!dispatchEnabled) {
+      if (!window.confirm('确定要开启智能派单并对所有未接单订单进行批量派单吗？')) {
+        return
+      }
+
+      try {
+        const toggleRes = await toggleDispatch()
+        if (toggleRes.code !== 200) {
+          alert(`开启失败: ${toggleRes.msg}`)
+          return
+        }
+        setDispatchEnabled(toggleRes.data.enabled)
+
+        const batchRes = await batchDispatch()
+        if (batchRes.code === 200) {
+          const { total, success, failed } = batchRes.data
+          alert(`智能派单已开启！\n批量派单完成！\n总订单数: ${total}\n成功: ${success}\n失败: ${failed}`)
+          fetchOrders()
+          if (selectedOrder) {
+            fetchOrderDetail(selectedOrder.id)
+          }
+        } else {
+          alert(`批量派单失败: ${batchRes.msg}`)
+        }
+      } catch (error) {
+        console.error('智能派单失败:', error)
+        alert('智能派单失败，请稍后重试')
+      }
+    }
+  }
+
+  const handleCancelDispatch = async () => {
+    if (!window.confirm('确定要取消智能派单吗？')) {
+      return
+    }
+
+    try {
+      const res = await toggleDispatch()
+      if (res.code === 200) {
+        setDispatchEnabled(res.data.enabled)
+        alert('智能派单已关闭')
+      } else {
+        alert(`取消失败: ${res.msg}`)
+      }
+    } catch (error) {
+      console.error('取消失败:', error)
+      alert('取消失败，请稍后重试')
+    }
+  }
+
   return (
     <div style={{ padding: '20px', background: '#f5f7fa', minHeight: '100vh' }}>
       {/* 顶部筛选栏 */}
@@ -160,7 +256,29 @@ export default function OrderDispatch() {
           </div>
           <Button onClick={handleReset} style={{ flexShrink: 0 }}>重置</Button>
           <Button type="primary" style={{ background: '#5b5fc7', borderColor: '#5b5fc7', flexShrink: 0 }}>搜索</Button>
-          <Button type="primary" style={{ background: '#52c41a', borderColor: '#52c41a', flexShrink: 0 }}>智能派单</Button>
+          <Button 
+            type="primary" 
+            style={{ 
+              background: dispatchEnabled ? '#faad14' : '#52c41a', 
+              borderColor: dispatchEnabled ? '#faad14' : '#52c41a', 
+              flexShrink: 0 
+            }} 
+            onClick={handleSmartDispatch}
+          >
+            {dispatchEnabled ? '智能派单中' : '智能派单'}
+          </Button>
+          <Button 
+            style={{ 
+              background: '#ff4d4f', 
+              borderColor: '#ff4d4f', 
+              color: '#fff',
+              flexShrink: 0 
+            }} 
+            onClick={handleCancelDispatch}
+            disabled={!dispatchEnabled}
+          >
+            取消
+          </Button>
           <div style={{ marginLeft: 'auto', flexShrink: 0 }}>
             <Button icon={<ReloadOutlined />} onClick={fetchOrders}>刷新</Button>
           </div>
@@ -342,33 +460,43 @@ export default function OrderDispatch() {
         {/* 司机信息 */}
         <Col span={6}>
           <Card title="司机信息" style={{ ...cardStyle }} bodyStyle={{ padding: '16px', minHeight: '220px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-              <Avatar size={44} icon={<CarFilled />} style={{ background: '#52c41a' }} />
-              <div>
-                <div style={{ fontWeight: 500, fontSize: '14px', color: '#333' }}>{selectedOrder?.driverName || '张师傅'}</div>
-                <Tag color="success" style={{ marginTop: '4px', fontSize: '10px' }}>已认证</Tag>
+            {selectedOrder?.orderStatus === 1 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '180px' }}>
+                <Avatar size={44} icon={<CarFilled />} style={{ background: '#d9d9d9', marginBottom: '12px' }} />
+                <div style={{ color: '#999', fontSize: '14px' }}>暂无司机</div>
+                <div style={{ color: '#ccc', fontSize: '12px', marginTop: '4px' }}>待接单状态，等待派单</div>
               </div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{ color: '#666', fontSize: '12px', width: '50px', flexShrink: 0 }}>手机号</span>
-                <span style={{ fontSize: '13px', color: '#333' }}>{selectedOrder?.driverPhone || '139 **** 2468'}</span>
-                <PhoneOutlined style={{ color: '#5b5fc7', marginLeft: '4px', fontSize: '12px' }} />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{ color: '#666', fontSize: '12px', width: '50px', flexShrink: 0 }}>车牌号</span>
-                <span style={{ fontSize: '13px', color: '#333' }}>{selectedOrder?.carNo || '粤B · 12345'}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{ color: '#666', fontSize: '12px', width: '50px', flexShrink: 0 }}>车辆信息</span>
-                <span style={{ fontSize: '13px', color: '#333' }}>白色 · 大众朗逸</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{ color: '#666', fontSize: '12px', width: '50px', flexShrink: 0 }}>服务评分</span>
-                <StarFilled style={{ color: '#faad14', marginRight: '4px' }} />
-                <span style={{ fontSize: '13px', color: '#333' }}>4.98分</span>
-              </div>
-            </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                  <Avatar size={44} icon={<CarFilled />} style={{ background: '#52c41a' }} />
+                  <div>
+                    <div style={{ fontWeight: 500, fontSize: '14px', color: '#333' }}>{selectedOrder?.driverName || '张师傅'}</div>
+                    <Tag color="success" style={{ marginTop: '4px', fontSize: '10px' }}>已认证</Tag>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ color: '#666', fontSize: '12px', width: '50px', flexShrink: 0 }}>手机号</span>
+                    <span style={{ fontSize: '13px', color: '#333' }}>{selectedOrder?.driverPhone || '139 **** 2468'}</span>
+                    <PhoneOutlined style={{ color: '#5b5fc7', marginLeft: '4px', fontSize: '12px' }} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ color: '#666', fontSize: '12px', width: '50px', flexShrink: 0 }}>车牌号</span>
+                    <span style={{ fontSize: '13px', color: '#333' }}>{selectedOrder?.carNo || '粤B · 12345'}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ color: '#666', fontSize: '12px', width: '50px', flexShrink: 0 }}>车辆信息</span>
+                    <span style={{ fontSize: '13px', color: '#333' }}>白色 · 大众朗逸</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ color: '#666', fontSize: '12px', width: '50px', flexShrink: 0 }}>服务评分</span>
+                    <StarFilled style={{ color: '#faad14', marginRight: '4px' }} />
+                    <span style={{ fontSize: '13px', color: '#333' }}>4.98分</span>
+                  </div>
+                </div>
+              </>
+            )}
           </Card>
         </Col>
 

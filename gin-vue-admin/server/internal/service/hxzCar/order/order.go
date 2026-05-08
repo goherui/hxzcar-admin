@@ -6,6 +6,7 @@ import (
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/internal/model/hxzCar"
+	"go.uber.org/zap"
 )
 
 type OrderService struct{}
@@ -31,7 +32,7 @@ type OrderListResponse struct {
 }
 
 type OrderListItem struct {
-	ID             uint    `json:"id"`
+	ID             uint64  `json:"id"`
 	OrderNo        string  `json:"orderNo"`
 	CreateTime     string  `json:"createTime"`
 	UserName       string  `json:"userName"`

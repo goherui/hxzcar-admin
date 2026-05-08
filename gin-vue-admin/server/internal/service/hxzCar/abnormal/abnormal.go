@@ -23,7 +23,7 @@ type AbnormalStats struct {
 }
 
 type AbnormalOrder struct {
-	ID            uint      `json:"id"`
+	ID            uint64    `json:"id"`
 	OrderNo       string    `json:"orderNo"`
 	CreateTime    time.Time `json:"createTime"`
 	PassengerName string    `json:"passengerName"`
@@ -104,13 +104,13 @@ func (s *AbnormalService) GetAbnormalOrders(query AbnormalQuery) ([]AbnormalOrde
 		}
 	}
 
-	var abnormalOrderIds []uint
-	var abnormalOrderMap = make(map[uint]int)
+	var abnormalOrderIds []uint64
+	var abnormalOrderMap = make(map[uint64]int)
 	var abnormalOrders []hxzCar.AbnormalOrder
 	global.GVA_DB.Unscoped().Find(&abnormalOrders)
 	for _, ao := range abnormalOrders {
-		abnormalOrderIds = append(abnormalOrderIds, uint(ao.OrderID))
-		abnormalOrderMap[uint(ao.OrderID)] = ao.Status
+		abnormalOrderIds = append(abnormalOrderIds, ao.OrderID)
+		abnormalOrderMap[ao.OrderID] = ao.Status
 	}
 
 	if query.ProcessStatus > 0 {
@@ -232,7 +232,7 @@ func generateMockAbnormalOrders(query AbnormalQuery) []AbnormalOrder {
 
 	for i := startIdx; i < endIdx; i++ {
 		order := AbnormalOrder{
-			ID:            uint(i + 1),
+			ID:            uint64(i + 1),
 			OrderNo:       "HXZ20240101" + fmt.Sprintf("%04d", i+1),
 			CreateTime:    time.Now().Add(-time.Duration(i) * time.Hour),
 			PassengerName: string([]rune{'张', '李', '王', '赵', '刘'}[i%5]) + "*",

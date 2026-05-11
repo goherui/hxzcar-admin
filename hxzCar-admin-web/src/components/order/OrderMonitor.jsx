@@ -3,6 +3,7 @@ import { Button } from 'antd'
 import { useNavigate } from 'react-router-dom'
 import ReactECharts from 'echarts-for-react'
 import { getMonitorData } from '../../api/hxzCar'
+import OrderMap from './OrderMap'
 
 function OrderMonitor() {
   const navigate = useNavigate()
@@ -188,18 +189,8 @@ function OrderMonitor() {
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr', gap: 20, marginBottom: 20 }}>
         <div style={{ background: '#fff', borderRadius: 8, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: '#333', marginBottom: 16 }}>实时订单地图</div>
-          <div style={{ 
-            height: 300, 
-            background: '#f8fafc', 
-            borderRadius: 8, 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-          }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 48, marginBottom: 8 }}>🗺️</div>
-              <div style={{ fontSize: 14, color: '#999' }}>地图展示区域</div>
-            </div>
+          <div style={{ height: 400, borderRadius: 8, overflow: 'hidden' }}>
+            <OrderMap />
           </div>
         </div>
 
